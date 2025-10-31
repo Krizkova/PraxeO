@@ -1,2 +1,3 @@
-SourceTreeSetup-3.4.26.exe
-Sourcetree.lnk
+target/
+.idea/
+*.iml
