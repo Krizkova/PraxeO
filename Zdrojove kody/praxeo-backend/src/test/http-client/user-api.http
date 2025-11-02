@@ -1,0 +1,14 @@
+### GET všichni uživatelé
+GET http://localhost:8080/api/users
+
+### POST nový uživatel
+POST http://localhost:8080/api/users/register
+Content-Type: application/json
+
+{
+  "jmeno": "Jana",
+  "prijmeni": "Nováková",
+  "email": "jana.novakova@osu.cz",
+  "heslo": "Heslo123",
+  "role": "STUDENT"
+}
