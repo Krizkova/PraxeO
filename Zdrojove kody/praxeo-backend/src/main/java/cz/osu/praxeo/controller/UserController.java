@@ -1,10 +1,12 @@
 package cz.osu.praxeo.controller;
 
 import cz.osu.praxeo.dto.UserDto;
+import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.mapper.UserMapper;
 import cz.osu.praxeo.service.UserService;
 import jakarta.annotation.security.PermitAll;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -28,8 +30,9 @@ public class UserController {
     }
 
     @PermitAll
-    @PostMapping("/register")
-    public UserDto register(@RequestBody UserDto dto) {
+    @PostMapping("/registerStudent")
+    public UserDto registerStudent(@Valid @RequestBody UserDto dto) {
+        dto.setRole(Role.STUDENT);
         User user = userMapper.toEntity(dto);
         User saved = userService.registerUser(user);
         return userMapper.toDto(saved);

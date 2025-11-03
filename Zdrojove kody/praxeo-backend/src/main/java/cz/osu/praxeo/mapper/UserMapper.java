@@ -14,6 +14,7 @@ public class UserMapper {
         user.setPrijmeni(dto.getPrijmeni());
         user.setEmail(dto.getEmail());
         user.setHeslo(dto.getHeslo());
+        user.setStudijniCislo(dto.getStudijniCislo());
         user.setRole(dto.getRole());
         return user;
     }
@@ -24,6 +25,7 @@ public class UserMapper {
         dto.setJmeno(user.getJmeno());
         dto.setPrijmeni(user.getPrijmeni());
         dto.setEmail(user.getEmail());
+        dto.setStudijniCislo(user.getStudijniCislo());
         dto.setRole(user.getRole());
         return dto;
     }
