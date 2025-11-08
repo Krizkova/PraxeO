@@ -1,7 +1,7 @@
 services:
   praxeo-db:
     image: postgres:15
-    # container_name: praxeo-db
+    container_name: praxeo-db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
