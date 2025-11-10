@@ -1,0 +1,45 @@
+services:
+  praxeo-db:
+    image: postgres:15
+    container_name: praxeo-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: praxeo
+    ports:
+      - "5432:5432"
+    volumes:
+      - praxeo_data:/var/lib/postgresql/data
+    networks:
+      - praxeo-net
+
+  praxeo-backend:
+    build: ./praxeo-backend
+    container_name: praxeo-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://praxeo-db:5432/praxeo
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+    depends_on:
+      - praxeo-db
+    networks:
+      - praxeo-net
+
+  praxeo-frontend:
+    build: ./praxeo-frontend
+    container_name: praxeo-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - praxeo-backend
+    networks:
+      - praxeo-net
+
+volumes:
+  praxeo_data:
+
+networks:
+  praxeo-net:
+    driver: bridge

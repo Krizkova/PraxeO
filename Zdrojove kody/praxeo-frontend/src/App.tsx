@@ -1,3 +1,4 @@
+import React from "react";
 import AppRouter from "./routing/AppRouter";
 
 function App() {
@@ -5,4 +6,3 @@ function App() {
 }
 
 export default App;
-
