@@ -14,5 +14,6 @@ public class UserDto {
     private String email;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String heslo;
+    private String studijniCislo;
     private Role role;
 }

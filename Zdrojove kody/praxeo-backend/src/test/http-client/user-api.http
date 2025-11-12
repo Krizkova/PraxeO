@@ -2,13 +2,14 @@
 GET http://localhost:8080/api/users
 
 ### POST nový uživatel
-POST http://localhost:8080/api/users/register
+POST http://localhost:8080/api/users/registerStudent
 Content-Type: application/json
 
 {
-  "jmeno": "Jana",
+  "jmeno": "Kveta",
   "prijmeni": "Nováková",
-  "email": "jana.novakova@osu.cz",
+  "email": "Kveta.novakova@osu.cz",
+  "studijniCislo": "P121256",
   "heslo": "Heslo123",
   "role": "STUDENT"
 }
