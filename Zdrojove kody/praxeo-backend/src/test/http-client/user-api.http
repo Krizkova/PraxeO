@@ -1,15 +1,27 @@
 ### GET všichni uživatelé
 GET http://localhost:8080/api/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrcml6amUwNUBvc3UuY3oiLCJpYXQiOjE3NjI5Mjc5NzYsImV4cCI6MTc2MzAxNDM3Nn0.gp5aMXtEuu1vpus-SoqUWMdzuETcDSipz8a1AvdvbUY
 
-### POST nový uživatel
+### Registrace nového studenta
 POST http://localhost:8080/api/users/registerStudent
 Content-Type: application/json
 
 {
-  "jmeno": "Kveta",
-  "prijmeni": "Nováková",
-  "email": "Kveta.novakova@osu.cz",
-  "studijniCislo": "P121256",
-  "heslo": "Heslo123",
-  "role": "STUDENT"
+  "firstName": "Kveta",
+  "lastName": "Nováková",
+  "email": "kveta.novakova@osu.cz",
+  "studentNumber": "P121256"
 }
+
+### Nastavení hesla po registraci (aktivace účtu)
+POST http://localhost:8080/api/users/set-password
+Content-Type: application/json
+
+{
+  "token": "c01bfa37-ac0f-472c-af6d-eb8539fe6e3f",
+  "password": "Heslo123"
+}
+
+### Test přihlášeného uživatele - token z /api/auth/login
+GET http://localhost:8080/api/users/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrcml6amUwNUBvc3UuY3oiLCJpYXQiOjE3NjI5Mjc5NzYsImV4cCI6MTc2MzAxNDM3Nn0.gp5aMXtEuu1vpus-SoqUWMdzuETcDSipz8a1AvdvbUY

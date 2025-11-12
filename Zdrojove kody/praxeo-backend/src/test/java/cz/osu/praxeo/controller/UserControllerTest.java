@@ -7,6 +7,8 @@ import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,42 +27,52 @@ class UserControllerTest {
     @Order(1)
     void userRegisterTest() {
         UserDto dto = new UserDto();
-        dto.setJmeno("Jana");
-        dto.setPrijmeni("Králová");
+        dto.setFirstName("Jana");
+        dto.setLastName("Králová");
         dto.setEmail("jana.kralova@example.com");
-        dto.setHeslo("tajneheslo");
+        dto.setPassword("tajneheslo");
         dto.setRole(Role.STUDENT);
-        dto.setStudijniCislo("P555255");
+        dto.setStudentNumber("P555255");
 
-        assertDoesNotThrow(() -> {
-            var result = userController.registerStudent(dto);
-            assertNotNull(result);
-            assertEquals("jana.kralova@example.com", result.getEmail());
-        });
+        ResponseEntity<?> response = userController.registerStudent(dto);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertTrue(response.getBody().toString().contains("jana.kralova@example.com")
+                || response.getBody().toString().contains("Registrace úspěšná"));
     }
 
     @Test
     @Order(2)
     void userRegisterDuplicateEmail() {
+        // první registrace
         UserDto first = new UserDto();
-        first.setJmeno("Jana");
-        first.setPrijmeni("Králová");
+        first.setFirstName("Jana");
+        first.setLastName("Králová");
         first.setEmail("jana.kralova@example.com");
-        first.setHeslo("tajneheslo");
+        first.setPassword("tajneheslo");
         first.setRole(Role.STUDENT);
-        first.setStudijniCislo("P555255");
-        userController.registerStudent(first);
+        first.setStudentNumber("P555255");
+        first.setActive(true);
 
+        ResponseEntity<?> firstResponse = userController.registerStudent(first);
+        assertEquals(HttpStatus.OK, firstResponse.getStatusCode());
+
+        // druhá registrace se stejným e-mailem
         UserDto duplicate = new UserDto();
-        duplicate.setJmeno("Jana");
-        duplicate.setPrijmeni("Králová");
+        duplicate.setFirstName("Jana");
+        duplicate.setLastName("Králová");
         duplicate.setEmail("jana.kralova@example.com"); // stejný email
-        duplicate.setHeslo("tajneheslo");
+        duplicate.setPassword("tajneheslo");
         duplicate.setRole(Role.STUDENT);
-        duplicate.setStudijniCislo("P555256");
+        duplicate.setActive(true);
+        duplicate.setStudentNumber("P555256");
 
-        Exception ex = assertThrows(Exception.class, () -> userController.registerStudent(duplicate));
-        assertTrue(ex.getMessage().toLowerCase().contains("unique") || ex.getMessage().toLowerCase().contains("email"));
+        ResponseEntity<?> duplicateResponse = userController.registerStudent(duplicate);
+
+        // ✅ očekáváme 400 + text "Email už existuje"
+        assertEquals(HttpStatus.BAD_REQUEST, duplicateResponse.getStatusCode());
+        assertTrue(duplicateResponse.getBody().toString().toLowerCase().contains("email"));
     }
 
     @AfterEach

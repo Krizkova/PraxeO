@@ -1,7 +1,7 @@
 import React from "react";
-import Header from "../components/Header/Header";
+import Header from "../components/header/Header";
 import { Container, Row, Col } from "react-bootstrap";
-import LoginForm from "../components/LoginForm/LoginForm";
+import LoginForm from "../components/login/LoginForm";
 
 const HomePage: React.FC = () => {
     return (

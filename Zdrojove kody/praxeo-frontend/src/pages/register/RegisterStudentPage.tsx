@@ -1,6 +1,6 @@
 import React from "react";
-import Header from "../components/Header/Header";
-import RegisterStudent from "../components/Register/RegisterStudent";
+import Header from "../../components/header/Header";
+import RegisterStudent from "../../components/register/RegisterStudent";
 import { useNavigate } from "react-router-dom";
 
 const RegisterStudentPage: React.FC = () => {

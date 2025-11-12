@@ -1,27 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 import { Card, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import { useLogin } from "./useLogin";
 
 const LoginForm: React.FC = () => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const { email, setEmail, password, setPassword, handleLogin } = useLogin();
     const navigate = useNavigate();
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log("Přihlašovací údaje:", { email, password });
-        // TODO: připojit k BE endpointu /api/auth/login
-    };
-
-    const handleRegisterRedirect = () => {
-        navigate("/registerStudent");
-    };
 
     return (
         <Card className="shadow-sm">
             <Card.Body>
                 <Card.Title>Přihlášení</Card.Title>
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleLogin}>
                     <Form.Group className="mb-3" controlId="email">
                         <Form.Label>Email</Form.Label>
                         <Form.Control
@@ -51,7 +41,7 @@ const LoginForm: React.FC = () => {
                     <Button
                         variant="outline-success"
                         className="w-100 mt-2"
-                        onClick={handleRegisterRedirect}
+                        onClick={() => navigate("/registerStudent")}
                     >
                         Registrovat se
                     </Button>

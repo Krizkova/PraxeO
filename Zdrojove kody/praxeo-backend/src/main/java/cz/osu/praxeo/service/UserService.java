@@ -1,41 +1,66 @@
 package cz.osu.praxeo.service;
 
 import cz.osu.praxeo.dao.UserRepository;
+import cz.osu.praxeo.dao.VerificationTokenRepository;
 import cz.osu.praxeo.dto.UserDto;
+import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
+import cz.osu.praxeo.entity.VerificationToken;
 import cz.osu.praxeo.exception.UserException;
 import cz.osu.praxeo.mapper.UserMapper;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class UserService {
+@RequiredArgsConstructor
+public class UserService  implements UserDetailsService {
 
-    @Autowired
-    private UserMapper userMapper;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final VerificationTokenRepository tokenRepository;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    public User registerUser(User user) {
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new UserException("Uživatel s emailem " + user.getEmail() + " již existuje");
+    @Transactional
+    public UserDto registerStudent(UserDto userDto) {
+        if (userRepository.existsByEmail(userDto.getEmail())) {
+            throw new IllegalArgumentException("Email už existuje");
         }
 
-        user.setHeslo(passwordEncoder.encode(user.getHeslo()));
-        return userRepository.save(user);
+        User user = userMapper.toEntity(userDto);
+        user.setRole(Role.STUDENT);
+        user.setActive(false);
+        user = userRepository.save(user);
+
+        String token = UUID.randomUUID().toString();
+
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(user);
+        verificationToken.setExpiryDate(LocalDateTime.now().plusHours(24));
+        tokenRepository.save(verificationToken);
+
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        if (frontendUrl == null || frontendUrl.isBlank()) {
+            frontendUrl = "http://localhost:5173";
+        }
+
+        String link = frontendUrl + "/verify?token=" + token;
+        emailService.sendVerificationEmail(user.getEmail(), link);
+        return userMapper.toDto(user);
     }
 
     public List<UserDto> getAllUsers() {
@@ -44,4 +69,46 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
+    public Map<String, Object> setPassword(String token, String newPassword) {
+        Optional<VerificationToken> optionalToken = tokenRepository.findByToken(token);
+
+        if (optionalToken.isEmpty()) {
+            return Map.of(
+                    "success", false,
+                    "message", "Neplatný nebo expirovaný token"
+            );
+        }
+
+        VerificationToken verificationToken = optionalToken.get();
+        User user = verificationToken.getUser();
+
+        if (user == null) {
+            return Map.of(
+                    "success", false,
+                    "message", "Uživatel neexistuje"
+            );
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        user.setActive(true);
+        userRepository.save(user);
+
+        tokenRepository.delete(verificationToken);
+
+        return Map.of(
+                "success", true,
+                "message", "Heslo bylo nastaveno.",
+                "email", user.getEmail()
+        );
+    }
+
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email).orElse(null);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Uživatel s e-mailem " + email + " nebyl nalezen."));
+    }
 }

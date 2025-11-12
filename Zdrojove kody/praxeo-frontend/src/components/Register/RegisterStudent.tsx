@@ -1,13 +1,14 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { registerUser, RegisterUserRequest } from "../../api/userApi.js";
 
 const RegisterStudent: React.FC = () => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState<RegisterUserRequest>({
-        jmeno: "",
-        prijmeni: "",
+        firstName: "",
+        lastName: "",
         email: "",
-        heslo: "",
-        studijniCislo: "",
+        studentNumber: "",
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -16,12 +17,14 @@ const RegisterStudent: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
         try {
-            await registerUser(formData);
-            alert("Registrace proběhla úspěšně!");
-        } catch (error) {
-            console.error(error);
-            alert("Registrace se nezdařila.");
+            const user = await registerUser(formData);
+            alert(`Registrace proběhla úspěšně pro: ${user.email}`);
+            navigate("/");
+        } catch (error: any) {
+            console.error("Chyba při registraci:", error);
+            alert(`Registrace se nezdařila: ${error.message}`);
         }
     };
 
@@ -32,9 +35,9 @@ const RegisterStudent: React.FC = () => {
                     <input
                         type="text"
                         className="form-control"
-                        name="jmeno"
+                        name="firstName"
                         placeholder="Jméno"
-                        value={formData.jmeno}
+                        value={formData.firstName}
                         onChange={handleChange}
                     />
                 </div>
@@ -42,9 +45,9 @@ const RegisterStudent: React.FC = () => {
                     <input
                         type="text"
                         className="form-control"
-                        name="prijmeni"
+                        name="lastName"
                         placeholder="Příjmení"
-                        value={formData.prijmeni}
+                        value={formData.lastName}
                         onChange={handleChange}
                     />
                 </div>
@@ -65,22 +68,9 @@ const RegisterStudent: React.FC = () => {
                     <input
                         type="text"
                         className="form-control"
-                        name="studijniCislo"
+                        name="studentNumber"
                         placeholder="Studijní číslo"
-                        value={formData.studijniCislo}
-                        onChange={handleChange}
-                    />
-                </div>
-            </div>
-
-            <div className="row mb-4">
-                <div className="col-md-6">
-                    <input
-                        type="password"
-                        className="form-control"
-                        name="heslo"
-                        placeholder="Heslo"
-                        value={formData.heslo}
+                        value={formData.studentNumber}
                         onChange={handleChange}
                     />
                 </div>

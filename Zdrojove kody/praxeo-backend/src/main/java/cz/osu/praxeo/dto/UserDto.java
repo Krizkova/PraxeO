@@ -5,15 +5,21 @@ import cz.osu.praxeo.entity.Role;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class UserDto {
     private Long id;
-    private String jmeno;
-    private String prijmeni;
+    private String firstName;
+    private String lastName;
     private String email;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    private String heslo;
-    private String studijniCislo;
+    private String password;
+    private String studentNumber;
+    private String companyName;
     private Role role;
+    private LocalDateTime lastLogin;
+    private boolean active;
 }

@@ -10,23 +10,27 @@ public class UserMapper {
     public User toEntity(UserDto dto) {
         User user = new User();
         user.setId(dto.getId());
-        user.setJmeno(dto.getJmeno());
-        user.setPrijmeni(dto.getPrijmeni());
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
-        user.setHeslo(dto.getHeslo());
-        user.setStudijniCislo(dto.getStudijniCislo());
+        user.setPassword(dto.getPassword());
+        user.setStudentNumber(dto.getStudentNumber());
         user.setRole(dto.getRole());
+        user.setActive(dto.isActive());
+        user.setLastLogin(dto.getLastLogin());
         return user;
     }
 
     public UserDto toDto(User user) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
-        dto.setJmeno(user.getJmeno());
-        dto.setPrijmeni(user.getPrijmeni());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
-        dto.setStudijniCislo(user.getStudijniCislo());
+        dto.setStudentNumber(user.getStudentNumber());
         dto.setRole(user.getRole());
+        dto.setActive(user.isActive());
+        dto.setLastLogin(user.getLastLogin());
         return dto;
     }
 }
