@@ -1,7 +1,7 @@
 import React from "react";
-import Header from "../components/header/Header";
 import SummaryOfPractices from "../components/mainPages/SummaryOfPractices";
 import {useNavigate} from "react-router-dom";
+import Header from "../components/header/Header";
 
 const SummaryOfPracticesPage: React.FC = () => {
     const navigate = useNavigate();

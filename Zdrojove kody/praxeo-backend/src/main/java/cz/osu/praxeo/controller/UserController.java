@@ -5,6 +5,7 @@ import cz.osu.praxeo.dto.UserDto;
 import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.entity.VerificationToken;
+import cz.osu.praxeo.exception.UserException;
 import cz.osu.praxeo.mapper.UserMapper;
 import cz.osu.praxeo.service.UserService;
 import cz.osu.praxeo.service.EmailService;
@@ -39,14 +40,16 @@ public class UserController {
     }
 
     @PermitAll
-    @PostMapping("/registerStudent")
-    public ResponseEntity<?> registerStudent(@Valid @RequestBody UserDto dto) {
+    @PostMapping("/registerUser")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody UserDto dto) {
         try {
-            UserDto registered = userService.registerStudent(dto);
+            UserDto registered = userService.registerUser(dto);
             return ResponseEntity.ok(Map.of(
                     "message", "Registrace úspěšná.",
                     "email", registered.getEmail()
             ));
+        }  catch (UserException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {

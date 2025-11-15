@@ -7,6 +7,8 @@ export interface RegisterUserRequest {
     lastName: string;
     email: string;
     studentNumber?: string;
+    companyName?: string;
+    role?: string;
 }
 
 export interface UserResponse {
@@ -16,6 +18,7 @@ export interface UserResponse {
     email?: string;
     role?: string;
     studentNumber?: string;
+    companyName?: string;
     message?: string;
 }
 
@@ -42,7 +45,7 @@ async function authorizedFetch(url: string, options: RequestInit = {}) {
 }
 
 export async function registerUser(userData: RegisterUserRequest): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/registerStudent`, {
+    const response = await fetch(`${API_BASE_URL}/registerUser`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),

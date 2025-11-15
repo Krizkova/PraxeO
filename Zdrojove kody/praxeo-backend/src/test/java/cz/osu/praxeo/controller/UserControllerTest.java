@@ -29,16 +29,14 @@ class UserControllerTest {
         UserDto dto = new UserDto();
         dto.setFirstName("Jana");
         dto.setLastName("Králová");
-        dto.setEmail("jana.kralova@example.com");
-        dto.setPassword("tajneheslo");
-        dto.setRole(Role.STUDENT);
+        dto.setEmail("praxeo1@osu.cz");
         dto.setStudentNumber("P555255");
 
-        ResponseEntity<?> response = userController.registerStudent(dto);
+        ResponseEntity<?> response = userController.registerUser(dto);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().toString().contains("jana.kralova@example.com")
+        assertTrue(response.getBody().toString().contains("praxeo1@osu.cz")
                 || response.getBody().toString().contains("Registrace úspěšná"));
     }
 
@@ -49,29 +47,25 @@ class UserControllerTest {
         UserDto first = new UserDto();
         first.setFirstName("Jana");
         first.setLastName("Králová");
-        first.setEmail("jana.kralova@example.com");
-        first.setPassword("tajneheslo");
-        first.setRole(Role.STUDENT);
+        first.setEmail("praxeo1@osu.cz");
         first.setStudentNumber("P555255");
         first.setActive(true);
 
-        ResponseEntity<?> firstResponse = userController.registerStudent(first);
+        ResponseEntity<?> firstResponse = userController.registerUser(first);
         assertEquals(HttpStatus.OK, firstResponse.getStatusCode());
 
         // druhá registrace se stejným e-mailem
         UserDto duplicate = new UserDto();
         duplicate.setFirstName("Jana");
         duplicate.setLastName("Králová");
-        duplicate.setEmail("jana.kralova@example.com"); // stejný email
-        duplicate.setPassword("tajneheslo");
-        duplicate.setRole(Role.STUDENT);
+        duplicate.setEmail("praxeo1@osu.cz"); // stejný email
         duplicate.setActive(true);
         duplicate.setStudentNumber("P555256");
 
-        ResponseEntity<?> duplicateResponse = userController.registerStudent(duplicate);
+        ResponseEntity<?> duplicateResponse = userController.registerUser(duplicate);
 
         // ✅ očekáváme 400 + text "Email už existuje"
-        assertEquals(HttpStatus.BAD_REQUEST, duplicateResponse.getStatusCode());
+        assertEquals(HttpStatus.CONFLICT, duplicateResponse.getStatusCode());
         assertTrue(duplicateResponse.getBody().toString().toLowerCase().contains("email"));
     }
 

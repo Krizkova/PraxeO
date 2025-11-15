@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
-export const useLogin = () => {
+export const Login = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
@@ -35,7 +35,7 @@ export const useLogin = () => {
 
             // 🔀 Přesměrování
             if (userData.role === "ADMIN") {
-                navigate("/admin");
+                navigate("/summary");
             } else {
                 navigate("/summary");
             }

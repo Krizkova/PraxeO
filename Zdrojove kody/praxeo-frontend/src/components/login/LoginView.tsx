@@ -1,10 +1,10 @@
 import React from "react";
 import { Card, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { useLogin } from "./useLogin";
+import { Login } from "./Login";
 
-const LoginForm: React.FC = () => {
-    const { email, setEmail, password, setPassword, handleLogin } = useLogin();
+const LoginView: React.FC = () => {
+    const { email, setEmail, password, setPassword, handleLogin } = Login();
     const navigate = useNavigate();
 
     return (
@@ -51,4 +51,4 @@ const LoginForm: React.FC = () => {
     );
 };
 
-export default LoginForm;
+export default LoginView;

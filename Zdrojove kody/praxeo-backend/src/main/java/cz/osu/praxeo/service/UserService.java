@@ -11,6 +11,7 @@ import cz.osu.praxeo.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,6 +29,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService  implements UserDetailsService {
 
+    @Value("${university.email.domain}")
+    private String universityEmailDomain;
+
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final VerificationTokenRepository tokenRepository;
@@ -35,13 +39,22 @@ public class UserService  implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserDto registerStudent(UserDto userDto) {
+    public UserDto registerUser(UserDto userDto) {
         if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new IllegalArgumentException("Email už existuje");
+            throw new UserException("Email už existuje");
         }
 
         User user = userMapper.toEntity(userDto);
-        user.setRole(Role.STUDENT);
+        if (user.getStudentNumber() != null && user.getStudentNumber().isBlank()) {
+            user.setStudentNumber(null);
+        }
+        if (user.getRole() == null) {
+            user.setRole(Role.STUDENT);
+        }
+        if ((user.getRole() == Role.STUDENT || user.getRole() == Role.TEACHER)
+                && !user.getEmail().toLowerCase().endsWith(universityEmailDomain)) {
+            throw new UserException("Učitelé a studenti musí mít univerzitní e-mail končící na @osu.cz");
+        }
         user.setActive(false);
         user = userRepository.save(user);
 

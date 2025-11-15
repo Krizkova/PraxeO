@@ -1,18 +1,27 @@
-import React from "react";
-import Header from "../components/header/Header";
+import React, {useEffect, useState} from "react";
+import HeaderView from "../components/header/HeaderView";
 import { Container, Row, Col } from "react-bootstrap";
-import LoginForm from "../components/login/LoginForm";
+import LoginView from "../components/login/LoginView";
+import Header from "../components/header/Header";
+import Cookies from "js-cookie";
 
 const HomePage: React.FC = () => {
+    const [isLoggedIn, setIsLoggedIn] = useState(!!Cookies.get("token"));
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const token = Cookies.get("token");
+            setIsLoggedIn(!!token);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <>
-            {/* Header od kraje do kraje */}
             <Header />
 
-            {/* Obsah stránky s vnitřním odsazením */}
             <Container className="my-5">
                 <Row className="align-items-start">
-                    {/* Popis projektu */}
                     <Col xs={12} md={7} lg={8} className="mb-4 mb-md-0">
                         <h1 className="mb-4">O projektu PraxeO</h1>
                         <p>
@@ -32,12 +41,13 @@ const HomePage: React.FC = () => {
                         </p>
                     </Col>
 
-                    {/* Login panel */}
-                    <Col xs={12} md={5} lg={4}>
-                        <div className="p-4 border rounded shadow-sm bg-white">
-                            <LoginForm />
-                        </div>
-                    </Col>
+                    {!isLoggedIn && (
+                        <Col xs={12} md={5} lg={4}>
+                            <div className="p-4 border rounded shadow-sm bg-white">
+                                <LoginView />
+                            </div>
+                        </Col>
+                    )}
                 </Row>
             </Container>
         </>

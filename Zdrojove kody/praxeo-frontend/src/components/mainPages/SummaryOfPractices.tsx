@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
 import React, { useEffect, useState } from "react";
-import Header from "../header/Header";
+import Header from "../header/HeaderView";
 import SummaryOfPractices from "../mainPages/SummaryOfPractices";
 import {getCurrentUser, UserResponse} from "../../api/userApi";
 

@@ -32,7 +32,7 @@ public class User implements UserDetails {
 
     private String password;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = true)
     private String studentNumber;
 
     private String companyName;

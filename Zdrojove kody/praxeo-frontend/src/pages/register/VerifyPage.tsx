@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../../components/header/Header";
 import PasswordReset from "../../components/register/PasswordReset";
+import Header from "../../components/header/Header";
 
 const VerifyPage: React.FC = () => {
     const navigate = useNavigate();
@@ -9,10 +9,10 @@ const VerifyPage: React.FC = () => {
     return (
         <>
             <Header />
-            <div className="container mt-5" style={{ maxWidth: 600 }}>
+            <div className="container mt-5" style={{maxWidth: 600}}>
                 <button
                     className="btn btn-outline-success mb-4"
-                    onClick={() => navigate("/", { replace: true })}
+                    onClick={() => navigate("/", {replace: true})}
                 >
                     ← Zpět
                 </button>
@@ -23,7 +23,7 @@ const VerifyPage: React.FC = () => {
                     <strong>PraxeO</strong>.
                 </p>
 
-                <PasswordReset />
+                <PasswordReset/>
             </div>
         </>
     );

@@ -1,7 +1,7 @@
 import React from "react";
-import Header from "../../components/header/Header";
-import RegisterStudent from "../../components/register/RegisterStudent";
+import RegisterUser from "../../components/register/RegisterUser";
 import { useNavigate } from "react-router-dom";
+import Header from "../../components/header/Header";
 
 const RegisterStudentPage: React.FC = () => {
     const navigate = useNavigate();
@@ -20,7 +20,7 @@ const RegisterStudentPage: React.FC = () => {
 
                 <h2 className="mb-4">Registrace studenta</h2>
 
-                <RegisterStudent />
+                <RegisterUser />
             </div>
         </>
     );

@@ -3,7 +3,7 @@ GET http://localhost:8080/api/users
 Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrcml6amUwNUBvc3UuY3oiLCJpYXQiOjE3NjI5Mjc5NzYsImV4cCI6MTc2MzAxNDM3Nn0.gp5aMXtEuu1vpus-SoqUWMdzuETcDSipz8a1AvdvbUY
 
 ### Registrace nového studenta
-POST http://localhost:8080/api/users/registerStudent
+POST http://localhost:8080/api/users/registerUser
 Content-Type: application/json
 
 {

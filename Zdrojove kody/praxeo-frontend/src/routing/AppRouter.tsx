@@ -5,12 +5,14 @@ import HomePage from "../pages/HomePage";
 import RegisterStudentPage from "../pages/register/RegisterStudentPage";
 import VerifyPage from "../pages/register/VerifyPage";
 import SummaryOfPracticesPage from "../pages/SummaryOfPracticesPage";
+import RegisterUserPage from "../pages/register/RegisterUserPage";
 
 const AppRouter: React.FC = () => {
     return (
         <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/registerStudent" element={<RegisterStudentPage />} />
+            <Route path="/add-user" element={<RegisterUserPage />} />
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/summary" element={<SummaryOfPracticesPage />} />
         </Routes>
