@@ -4,30 +4,29 @@ services:
   praxeo-db:
     image: postgres:15
     container_name: praxeo-db
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    env_file: .env.docker
     ports:
       - "5432:5432"
     volumes:
       - praxeo_data:/var/lib/postgresql/data
     networks:
       - praxeo-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
 
   praxeo-backend:
     build: ./praxeo-backend
     container_name: praxeo-backend
-    env_file: .env
+    env_file: .env.docker
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
-      FRONTEND_URL: ${FRONTEND_URL}
     depends_on:
-      - praxeo-db
+      praxeo-db:
+        condition: service_healthy
     networks:
       - praxeo-net
     command: ["java", "-jar", "app.jar"]
@@ -35,6 +34,7 @@ services:
   praxeo-frontend:
     build: ./praxeo-frontend
     container_name: praxeo-frontend
+    env_file: .env.docker
     ports:
       - "5173:80"
     depends_on:
