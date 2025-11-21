@@ -1,6 +1,7 @@
 import Cookies from "js-cookie";
 
-const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/users`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const USERS_BASE_URL = `${API_BASE_URL}/users`;
 
 export interface RegisterUserRequest {
     firstName: string;
@@ -45,7 +46,7 @@ async function authorizedFetch(url: string, options: RequestInit = {}) {
 }
 
 export async function registerUser(userData: RegisterUserRequest): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/registerUser`, {
+    const response = await fetch(`${USERS_BASE_URL}/registerUser`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),
@@ -66,11 +67,11 @@ export async function registerUser(userData: RegisterUserRequest): Promise<UserR
 }
 
 export async function getCurrentUser(): Promise<UserResponse> {
-    const response = await authorizedFetch(`${API_BASE_URL}/me`, { method: "GET" });
+    const response = await authorizedFetch(`${USERS_BASE_URL}/me`, { method: "GET" });
     return (await response.json()) as UserResponse;
 }
 
 export async function getAllUsers(): Promise<UserResponse[]> {
-    const response = await authorizedFetch(`${API_BASE_URL}`, { method: "GET" });
+    const response = await authorizedFetch(`${USERS_BASE_URL}`, { method: "GET" });
     return (await response.json()) as UserResponse[];
 }

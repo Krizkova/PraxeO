@@ -2,7 +2,9 @@ target/
 .idea/
 *.iml
 
-# Node.js frontend
 node_modules/
 package-lock.json
 dist/
+
+.env
+.env.production

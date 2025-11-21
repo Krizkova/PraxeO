@@ -14,7 +14,7 @@ const PasswordReset: React.FC = () => {
         setLoading(true);
 
         try {
-            const passwordResponse = await fetch("http://localhost:8080/api/users/set-password", {
+            const passwordResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/set-password`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token, password }),
@@ -37,7 +37,7 @@ const PasswordReset: React.FC = () => {
             const email = result.email;
             alert("Heslo bylo úspěšně nastaveno.");
 
-            const loginResponse = await fetch("http://localhost:8080/api/auth/login", {
+            const loginResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),
