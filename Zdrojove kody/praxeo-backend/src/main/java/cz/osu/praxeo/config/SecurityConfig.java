@@ -44,6 +44,7 @@ public class SecurityConfig {
                                 "/api/auth/login",
                                 "/api/users/registerUser",
                                 "/api/users/set-password",
+                                "/api/users/role-by-token",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()

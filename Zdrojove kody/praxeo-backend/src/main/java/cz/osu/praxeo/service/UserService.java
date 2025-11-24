@@ -82,7 +82,14 @@ public class UserService  implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    public Map<String, Object> setPassword(String token, String newPassword) {
+    public Map<String, Object> completeRegistration(
+            String token,
+            String newPassword,
+            String firstName,
+            String lastName,
+            String studentNumber,
+            String companyName
+    ) {
         Optional<VerificationToken> optionalToken = tokenRepository.findByToken(token);
 
         if (optionalToken.isEmpty()) {
@@ -102,15 +109,23 @@ public class UserService  implements UserDetailsService {
             );
         }
 
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+        if (user.getRole().name().equals("STUDENT")) {
+            user.setStudentNumber(studentNumber);
+        }
+        if (user.getRole().name().equals("EXTERNAL_WORKER")) {
+            user.setCompanyName(companyName);
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setActive(true);
-        userRepository.save(user);
 
+        userRepository.save(user);
         tokenRepository.delete(verificationToken);
 
         return Map.of(
                 "success", true,
-                "message", "Heslo bylo nastaveno.",
+                "message", "Registrace byla dokončena.",
                 "email", user.getEmail()
         );
     }
@@ -123,5 +138,9 @@ public class UserService  implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Uživatel s e-mailem " + email + " nebyl nalezen."));
+    }
+
+    public VerificationToken findRoleByToken(String token) {
+        return tokenRepository.findByToken(token).orElse(null);
     }
 }

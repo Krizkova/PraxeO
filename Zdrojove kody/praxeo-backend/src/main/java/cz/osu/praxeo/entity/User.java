@@ -21,10 +21,10 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String lastName;
 
     @Column(unique = true, nullable = false)
@@ -43,22 +43,6 @@ public class User implements UserDetails {
     private LocalDateTime lastLogin;
 
     private boolean active;
-
-    @AssertTrue(message = "Student musi mit vyplnene studijni cislo.")
-    public boolean isStudentHasStudentNumber() {
-        if (role == Role.STUDENT) {
-            return studentNumber != null && !studentNumber.isBlank();
-        }
-        return true;
-    }
-
-    @AssertTrue(message = "Firma musi mit vyplnene nazev firmy.")
-    public boolean isCompanyasCompanyName() {
-        if (role == Role.EXTERNAL_WORKER) {
-            return companyName != null && !companyName.isBlank();
-        }
-        return true;
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,61 +1,67 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
-import { registerUser, RegisterUserRequest } from "../../api/userApi";
+
 import RegisterUserView from "./RegisterUserView";
+import { registerUser } from "../../api/userApi";
 
-const RegisterUser: React.FC = () => {
+interface Props {
+    isAdminOrTeacher: boolean;
+    role?: string | null;
+}
+
+const RegisterUser: React.FC<Props> = ({ isAdminOrTeacher }) => {
     const navigate = useNavigate();
-    const [role, setRole] = useState("STUDENT");
-    const [isAdminOrTeacher, setIsAdminOrTeacher] = useState(false);
 
-    const [formData, setFormData] = useState<RegisterUserRequest>({
-        firstName: "",
-        lastName: "",
-        email: "",
-        studentNumber: "",
-        companyName: "",
-        role: "STUDENT",
-    });
+    const [userRole, setUserRole] = useState<string | null>(null);
 
     useEffect(() => {
-        const storedRole = Cookies.get("userRole");
-        if (storedRole === "ADMIN" || storedRole === "TEACHER") {
-            setIsAdminOrTeacher(true);
-            setRole("TEACHER");
-        } else {
-            setIsAdminOrTeacher(false);
-            setRole("STUDENT");
-        }
+        const savedRole = Cookies.get("userRole");
+        setUserRole(savedRole ?? null);
+        console.log("roleSelect:", roleSelect);
     }, []);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    const [formData, setFormData] = useState({
+        email: ""
+    });
+
+    const [roleSelect, setRoleSelect] = useState(
+        isAdminOrTeacher ? "TEACHER" : "STUDENT"
+    );
 
     const handleRoleChange = (newRole: string) => {
-        setRole(newRole);
+        setRoleSelect(newRole);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        const finalRole = isAdminOrTeacher ? roleSelect : "STUDENT";
+
         try {
-            const payload = { ...formData, role };
-            const user = await registerUser(payload);
-            alert(`Registrace proběhla úspěšně pro: ${user.email}`);
-            navigate(isAdminOrTeacher ? "/summary" : "/");
-        } catch (error: any) {
-            alert(`Registrace se nezdařila: ${error.message}`);
+            await registerUser({
+                email: formData.email,
+                role: finalRole
+            });
+
+            alert("Registrační e-mail byl odeslán.");
+            navigate("/");
+        } catch (err: any) {
+            alert("Registrace se nezdařila: " + err.message);
         }
     };
 
     return (
         <RegisterUserView
-            formData={formData}
-            role={role}
-            isAdminOrTeacher={isAdminOrTeacher}
+            formData={{ ...formData, role: roleSelect }}
             onChange={handleChange}
             onSubmit={handleSubmit}
+            isAdminOrTeacher={isAdminOrTeacher}
+            roleSelect={roleSelect}
             onRoleChange={handleRoleChange}
         />
     );
