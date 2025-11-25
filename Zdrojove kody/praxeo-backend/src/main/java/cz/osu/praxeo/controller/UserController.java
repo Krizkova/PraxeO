@@ -70,12 +70,6 @@ public class UserController {
                 token, password, firstName, lastName, studentNumber, companyName
         );
 
-        boolean success = (boolean) result.get("success");
-
-        if (!success) {
-            return ResponseEntity.badRequest().body(result);
-        }
-
         return ResponseEntity.ok(result);
     }
 

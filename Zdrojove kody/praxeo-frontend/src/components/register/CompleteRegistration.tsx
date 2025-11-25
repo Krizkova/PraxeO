@@ -63,8 +63,7 @@ const CompleteRegistration: React.FC = () => {
                 return;
             }
 
-            // Auto-login po dokončení registrace
-            const login = await loginUser(result.success.email, password);
+            const login = await loginUser(result.email, password);
 
             Cookies.set("token", login.token);
             Cookies.set("userEmail", login.email);
