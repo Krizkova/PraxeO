@@ -19,6 +19,7 @@ public class UserMapper {
         user.setCompanyName(dto.getCompanyName());
         user.setActive(dto.isActive());
         user.setLastLogin(dto.getLastLogin());
+        user.setAgreedToTerms(dto.isAgreedToTerms());
         return user;
     }
 
@@ -33,6 +34,7 @@ public class UserMapper {
         dto.setRole(user.getRole());
         dto.setActive(user.isActive());
         dto.setLastLogin(user.getLastLogin());
+        dto.setAgreedToTerms(user.isAgreedToTerms());
         return dto;
     }
 }

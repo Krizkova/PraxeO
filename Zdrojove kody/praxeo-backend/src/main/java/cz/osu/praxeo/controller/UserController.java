@@ -25,7 +25,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -60,18 +59,31 @@ public class UserController {
     @PostMapping("/set-password")
     @PermitAll
     public ResponseEntity<?> setPassword(@RequestBody Map<String, String> data) {
-        String token = data.get("token");
-        String password = data.get("password");
+        String token = (String) data.get("token");
+        String password = (String) data.get("password");
+        String firstName = (String) data.get("firstName");
+        String lastName = (String) data.get("lastName");
+        String studentNumber = (String) data.get("studentNumber");
+        String companyName = (String) data.get("companyName");
 
-        Map<String, Object> result = userService.setPassword(token, password);
-        boolean success = (boolean) result.get("success");
-
-        if (!success) {
-            return ResponseEntity.badRequest().body(result);
-        }
+        Map<String, Object> result = userService.completeRegistration(
+                token, password, firstName, lastName, studentNumber, companyName
+        );
 
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/role-by-token")
+    @PermitAll
+    public ResponseEntity<?> getRoleByToken(@RequestParam String token) {
+        VerificationToken vt =  userService.findRoleByToken(token);
+        if (vt == null) {
+            return ResponseEntity.badRequest().body("Invalid token");
+        }
+
+        return ResponseEntity.ok(Map.of("role", vt.getUser().getRole().name()));
+    }
+
 
     @GetMapping("/me")
     public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal User userDetails) {

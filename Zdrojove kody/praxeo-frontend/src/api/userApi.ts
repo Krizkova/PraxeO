@@ -1,76 +1,125 @@
+import axios from "axios";
 import Cookies from "js-cookie";
 
-const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/users`;
+const API = import.meta.env.VITE_API_BASE_URL;
 
-export interface RegisterUserRequest {
-    firstName: string;
-    lastName: string;
-    email: string;
-    studentNumber?: string;
-    companyName?: string;
-    role?: string;
-}
-
-export interface UserResponse {
-    id?: number;
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    role?: string;
-    studentNumber?: string;
-    companyName?: string;
-    message?: string;
-}
-
-async function authorizedFetch(url: string, options: RequestInit = {}) {
-    const token = Cookies.get("token");
-
-    const headers: HeadersInit = {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-
-    console.log("➡️ Fetch:", url, "Authorization:", token ? "Bearer ..." : "missing");
-
-    const response = await fetch(url, { ...options, headers });
-
-    if (!response.ok) {
-        const text = await response.text();
-        console.error("❌ Chyba z BE:", text);
-        throw new Error(text || "Chyba komunikace se serverem");
+const api = axios.create({
+    baseURL: API,
+    headers: {
+        "Content-Type": "application/json"
     }
+});
 
-    return response;
+api.interceptors.request.use((config) => {
+    const token = Cookies.get("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+
+export async function loginUser(email: string, password: string) {
+    const res = await api.post("/auth/login", { email, password });
+    return res.data;
 }
 
-export async function registerUser(userData: RegisterUserRequest): Promise<UserResponse> {
-    const response = await fetch(`${API_BASE_URL}/registerUser`, {
+
+export async function registerUser(data: any) {
+    const res = await api.post("/users/registerUser", data);
+    return res.data;
+}
+
+export async function getRoleByToken(token: string) {
+    const res = await api.get("/users/role-by-token", {
+        params: { token }
+    });
+    return res.data;
+}
+
+export async function completeRegistration(payload: any) {
+    const res = await api.post("/users/set-password", payload);
+    return res.data;
+}
+
+export async function forgotPassword(data: any) {
+    const res = await api.post("/users/forgotPassword", data);
+    return res.data;
+}
+
+
+export async function getCurrentUser() {
+    const res = await api.get("/users/me");
+    return res.data;
+}
+
+
+
+
+
+
+
+
+
+
+/*
+import Cookies from "js-cookie";
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
+function authorizedHeaders() {
+    const token = Cookies.get("token");
+    return {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+}
+
+export async function loginUser(email: string, password: string) {
+    const res = await fetch(`${API}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
+        body: JSON.stringify({ email, password })
     });
 
-    if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || "Chyba při registraci uživatele");
-    }
-
-    const contentType = response.headers.get("content-type");
-    if (contentType && contentType.includes("application/json")) {
-        return (await response.json()) as UserResponse;
-    } else {
-        const text = await response.text();
-        return { message: text } as unknown as UserResponse;
-    }
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
 }
 
-export async function getCurrentUser(): Promise<UserResponse> {
-    const response = await authorizedFetch(`${API_BASE_URL}/me`, { method: "GET" });
-    return (await response.json()) as UserResponse;
+export async function registerUser(data: any) {
+    const res = await fetch(`${API}/users/registerUser`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
 }
 
-export async function getAllUsers(): Promise<UserResponse[]> {
-    const response = await authorizedFetch(`${API_BASE_URL}`, { method: "GET" });
-    return (await response.json()) as UserResponse[];
+export async function getRoleByToken(token: string) {
+    const res = await axios.get(`${API_URL}/users/role-by-token`, {
+        params: { token }
+    });
+    return res.data;
 }
+
+export async function completeRegistration(payload: any) {
+    const res = await fetch(`${API}/users/set-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+
+export async function getCurrentUser() {
+    const res = await fetch(`${API}/users/me`, {
+        headers: authorizedHeaders()
+    });
+
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+}
+*/

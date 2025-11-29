@@ -1,55 +1,33 @@
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import { loginUser } from "../../api/userApi";
 
-export const Login = () => {
+export const useLogin = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleLogin = async (e: FormEvent) => {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:8080/api/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-                credentials: "include",
-            });
+            const userData = await loginUser(email, password);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                alert(`Přihlášení selhalo: ${errorText}`);
-                return;
-            }
+            Cookies.set("token", userData.token);
+            Cookies.set("userEmail", userData.email);
+            Cookies.set("userRole", userData.role);
+            Cookies.set("userName", userData.firstName || "");
 
-            const userData = await response.json();
-            console.log("✅ Přihlášení úspěšné:", userData);
-
-            // 🔒 Uložení tokenu a uživatele do cookies
-            Cookies.set("token", userData.token, { expires: 1 });
-            Cookies.set("userEmail", userData.email, { expires: 1 });
-            Cookies.set("userRole", userData.role, { expires: 1 });
-            Cookies.set("userName", userData.firstName || "", { expires: 1 });
-
-            // 🔀 Přesměrování
-            if (userData.role === "ADMIN") {
-                navigate("/summary");
-            } else {
-                navigate("/summary");
-            }
-        } catch (error) {
-            console.error("Chyba při přihlášení:", error);
-            alert("Nastala chyba při připojení k serveru.");
+            navigate("/summary");
+        } catch (err: any) {
+            alert(err.message || "Chyba při přihlášení.");
         }
     };
 
     return {
-        email,
-        setEmail,
-        password,
-        setPassword,
+        email, setEmail,
+        password, setPassword,
         handleLogin,
     };
 };

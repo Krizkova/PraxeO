@@ -1,49 +1,73 @@
-version: "3.9"
+version: '3.9'
 
 services:
   praxeo-db:
     image: postgres:15
     container_name: praxeo-db
-    env_file: .env.docker
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
-    volumes:
-      - praxeo_data:/var/lib/postgresql/data
     networks:
       - praxeo-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-      start_period: 5s
 
   praxeo-backend:
     build: ./praxeo-backend
     container_name: praxeo-backend
-    env_file: .env.docker
+    restart: always
+    depends_on:
+      - praxeo-db
+
+    env_file:
+      - .env
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://praxeo-db:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_ENABLE}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE}
+      SPRING_MAIL_DEFAULT_ENCODING: ${SPRING_MAIL_DEFAULT_ENCODING}
+      SPRING_MAIL_TEST_CONNECTION: ${SPRING_MAIL_TEST_CONNECTION}
+
+      UNIVERSITY_EMAIL_DOMAIN: ${UNIVERSITY_EMAIL_DOMAIN}
+
+      FRONTEND_URL: http://localhost:5173
+
     ports:
       - "8080:8080"
-    depends_on:
-      praxeo-db:
-        condition: service_healthy
     networks:
       - praxeo-net
-    command: ["java", "-jar", "app.jar"]
 
   praxeo-frontend:
-    build: ./praxeo-frontend
+    build:
+      context: ./praxeo-frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+
+    environment:
+      - VITE_API_BASE_URL=http://praxeo-backend:8080/api
+
     container_name: praxeo-frontend
-    env_file: .env.docker
+    restart: always
+
     ports:
       - "5173:80"
+
     depends_on:
       - praxeo-backend
+
     networks:
       - praxeo-net
-
-volumes:
-  praxeo_data:
 
 networks:
   praxeo-net:

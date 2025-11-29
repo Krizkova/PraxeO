@@ -7,10 +7,8 @@ POST http://localhost:8080/api/users/registerUser
 Content-Type: application/json
 
 {
-  "firstName": "Kveta",
-  "lastName": "Nováková",
-  "email": "kveta.novakova@osu.cz",
-  "studentNumber": "P121256"
+  "email": "krizje05@osu.cz",
+  "role": "STUDENT"
 }
 
 ### Nastavení hesla po registraci (aktivace účtu)

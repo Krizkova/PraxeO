@@ -1,16 +1,17 @@
 import React from "react";
 import { Card, Form, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import { Login } from "./Login";
+import { useLogin } from "./Login";
 
 const LoginView: React.FC = () => {
-    const { email, setEmail, password, setPassword, handleLogin } = Login();
+    const { email, setEmail, password, setPassword, handleLogin } = useLogin();
     const navigate = useNavigate();
 
     return (
         <Card className="shadow-sm">
             <Card.Body>
                 <Card.Title>Přihlášení</Card.Title>
+
                 <Form onSubmit={handleLogin}>
                     <Form.Group className="mb-3" controlId="email">
                         <Form.Label>Email</Form.Label>
@@ -33,6 +34,15 @@ const LoginView: React.FC = () => {
                             required
                         />
                     </Form.Group>
+
+                    <Form.Text
+                        role="button"
+                        className="text-primary mb-3"
+                        onClick={() => navigate("/forgot-password")}
+                        style={{ cursor: "pointer" }}
+                    >
+                        Zapomněl jsem heslo?
+                    </Form.Text>
 
                     <Button variant="success" type="submit" className="w-100">
                         Přihlásit se

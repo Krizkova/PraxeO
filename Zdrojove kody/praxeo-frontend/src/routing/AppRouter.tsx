@@ -6,6 +6,7 @@ import RegisterStudentPage from "../pages/register/RegisterStudentPage";
 import VerifyPage from "../pages/register/VerifyPage";
 import SummaryOfPracticesPage from "../pages/SummaryOfPracticesPage";
 import RegisterUserPage from "../pages/register/RegisterUserPage";
+import ForgotPasswordPage from "../pages/login/ForgotPasswordPage";
 
 const AppRouter: React.FC = () => {
     return (
@@ -14,6 +15,7 @@ const AppRouter: React.FC = () => {
             <Route path="/registerStudent" element={<RegisterStudentPage />} />
             <Route path="/add-user" element={<RegisterUserPage />} />
             <Route path="/verify" element={<VerifyPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/summary" element={<SummaryOfPracticesPage />} />
         </Routes>
     );
