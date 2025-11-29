@@ -35,6 +35,15 @@ const LoginView: React.FC = () => {
                         />
                     </Form.Group>
 
+                    <Form.Text
+                        role="button"
+                        className="text-primary mb-3"
+                        onClick={() => navigate("/forgot-password")}
+                        style={{ cursor: "pointer" }}
+                    >
+                        Zapomněl jsem heslo?
+                    </Form.Text>
+
                     <Button variant="success" type="submit" className="w-100">
                         Přihlásit se
                     </Button>

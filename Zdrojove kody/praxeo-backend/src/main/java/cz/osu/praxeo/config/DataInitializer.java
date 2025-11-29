@@ -32,6 +32,7 @@ public class DataInitializer {
             admin.setActive(true);
             admin.setRole(Role.ADMIN);
             admin.setPassword(passwordEncoder.encode("Admin123"));
+            admin.setAgreedToTerms(true);
             userRepository.save(admin);
 
             RefreshToken infiniteToken = new RefreshToken();

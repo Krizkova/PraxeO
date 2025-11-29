@@ -19,10 +19,10 @@ const CompleteRegistration: React.FC = () => {
     const [studentNumber, setStudentNumber] = useState("");
     const [companyName, setCompanyName] = useState("");
     const [password, setPassword] = useState("");
+    const [agreedToTerms, setAgreedToTerms] = useState(false);
 
     const [loading, setLoading] = useState(false);
 
-    // --- DŮLEŽITÉ: zde se načte role z tokenu ---
     useEffect(() => {
         const fetchRole = async () => {
             if (!token) return;
@@ -42,7 +42,6 @@ const CompleteRegistration: React.FC = () => {
         e.preventDefault();
         setLoading(true);
 
-        // generické payload
         const payload: any = {
             token,
             password,
@@ -50,7 +49,6 @@ const CompleteRegistration: React.FC = () => {
             lastName
         };
 
-        // pouze, co odpovídá roli
         if (role === "STUDENT") payload.studentNumber = studentNumber;
         if (role === "EXTERNAL_WORKER") payload.companyName = companyName;
 
@@ -93,6 +91,8 @@ const CompleteRegistration: React.FC = () => {
             setCompanyName={setCompanyName}
             setPassword={setPassword}
             handleSubmit={handleSubmit}
+            agreedToTerms={agreedToTerms}
+            setAgreedToTerms={setAgreedToTerms}
         />
     );
 };

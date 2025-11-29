@@ -7,12 +7,14 @@ interface Props {
     studentNumber: string;
     companyName: string;
     password: string;
+    agreedToTerms: boolean;
     loading: boolean;
     setFirstName: (v: string) => void;
     setLastName: (v: string) => void;
     setStudentNumber: (v: string) => void;
     setCompanyName: (v: string) => void;
     setPassword: (v: string) => void;
+    setAgreedToTerms: (v: boolean) => void;
     handleSubmit: (e: React.FormEvent) => void;
 }
 
@@ -24,12 +26,14 @@ const CompleteRegistrationView: React.FC<Props> = (props) => {
         studentNumber,
         companyName,
         password,
+        agreedToTerms,
         loading,
         setFirstName,
         setLastName,
         setStudentNumber,
         setCompanyName,
         setPassword,
+        setAgreedToTerms,
         handleSubmit
     } = props;
 
@@ -96,7 +100,21 @@ const CompleteRegistrationView: React.FC<Props> = (props) => {
                 />
             </div>
 
-            <button className="btn btn-success w-100" disabled={loading}>
+            <div className="form-check mb-3">
+                <input
+                    type="checkbox"
+                    className="form-check-input"
+                    id="terms"
+                    checked={agreedToTerms}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    required
+                />
+                <label className="form-check-label" htmlFor="terms">
+                    Souhlasím se zpracováním osobních údajů (GDPR)
+                </label>
+            </div>
+
+            <button className="btn btn-success w-100" disabled={loading || !agreedToTerms}>
                 {loading ? "Ukládám..." : "Dokončit registraci"}
             </button>
         </form>

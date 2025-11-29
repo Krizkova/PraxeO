@@ -119,6 +119,7 @@ public class UserService  implements UserDetailsService {
         }
         user.setPassword(passwordEncoder.encode(newPassword));
         user.setActive(true);
+        user.setAgreedToTerms(true);
 
         userRepository.save(user);
         tokenRepository.delete(verificationToken);

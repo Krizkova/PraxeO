@@ -44,6 +44,8 @@ public class User implements UserDetails {
 
     private boolean active;
 
+    private boolean agreedToTerms;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(() -> "ROLE_" + role);

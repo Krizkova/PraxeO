@@ -22,4 +22,5 @@ public class UserDto {
     private Role role;
     private LocalDateTime lastLogin;
     private boolean active;
+    private boolean agreedToTerms;
 }

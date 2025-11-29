@@ -42,6 +42,12 @@ export async function completeRegistration(payload: any) {
     return res.data;
 }
 
+export async function forgotPassword(data: any) {
+    const res = await api.post("/users/forgotPassword", data);
+    return res.data;
+}
+
+
 export async function getCurrentUser() {
     const res = await api.get("/users/me");
     return res.data;
