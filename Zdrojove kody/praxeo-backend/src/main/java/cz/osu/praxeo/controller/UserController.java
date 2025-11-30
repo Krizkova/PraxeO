@@ -39,7 +39,7 @@ public class UserController {
     }
 
     @PermitAll
-    @PostMapping("/registerUser")
+    @PostMapping("/register-user")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserDto dto) {
         try {
             UserDto registered = userService.registerUser(dto);
@@ -56,9 +56,9 @@ public class UserController {
         }
     }
 
-    @PostMapping("/set-password")
+    @PostMapping("/complete-registration")
     @PermitAll
-    public ResponseEntity<?> setPassword(@RequestBody Map<String, String> data) {
+    public ResponseEntity<?> completeRegistration(@RequestBody Map<String, String> data) {
         String token = (String) data.get("token");
         String password = (String) data.get("password");
         String firstName = (String) data.get("firstName");
@@ -97,6 +97,44 @@ public class UserController {
         }
 
         return ResponseEntity.ok(userMapper.toDto(user));
+    }
+
+
+    @PostMapping("/forgot-password")
+    @PermitAll
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> data) {
+        String email = data.get("email");
+
+        try {
+            userService.sendMailForPasswordReset(email);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "email", email,
+                    "message", "Pokyny pro obnovu hesla byly odeslány na e-mail."
+            ));
+        } catch (UserException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/reset-password")
+    @PermitAll
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> data) {
+        String token = data.get("token");
+        String password = data.get("password");
+
+        Map<String, Object> result = userService.resetPassword(token, password);
+
+        boolean success = (boolean) result.get("success");
+
+        if (!success) {
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        return ResponseEntity.ok(result);
     }
 
 

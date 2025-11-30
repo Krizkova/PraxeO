@@ -7,6 +7,7 @@ import VerifyPage from "../pages/register/VerifyPage";
 import SummaryOfPracticesPage from "../pages/SummaryOfPracticesPage";
 import RegisterUserPage from "../pages/register/RegisterUserPage";
 import ForgotPasswordPage from "../pages/login/ForgotPasswordPage";
+import ResetPasswordPage from "../pages/login/ResetPasswordPage";
 
 const AppRouter: React.FC = () => {
     return (
@@ -17,6 +18,7 @@ const AppRouter: React.FC = () => {
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/summary" element={<SummaryOfPracticesPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Routes>
     );
 };

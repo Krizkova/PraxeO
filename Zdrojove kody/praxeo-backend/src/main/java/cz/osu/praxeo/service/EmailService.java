@@ -28,4 +28,21 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    public void sendPasswordResetEmail(String to, String link) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("praxeo@seznam.cz");
+        message.setTo(to);
+        message.setSubject("PraxeO – dokončete obnovení hesla");
+        message.setText("""
+            Dobrý den,
+            
+            dokončete prosím obnovení hesla kliknutím na tento odkaz:
+            """ + link + """
+
+            Odkaz je platný 24 hodin.
+            Tým PraxeO
+            """);
+
+        mailSender.send(message);
+    }
 }

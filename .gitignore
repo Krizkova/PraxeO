@@ -1,4 +1,5 @@
 target/
+build/
 .idea/
 *.iml
 
@@ -7,5 +8,6 @@ package-lock.json
 dist/
 
 .env
+.env.example
 .env.local
 .env.production

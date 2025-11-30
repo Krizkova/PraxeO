@@ -3,6 +3,7 @@ package cz.osu.praxeo.service;
 import cz.osu.praxeo.dao.UserRepository;
 import cz.osu.praxeo.dao.VerificationTokenRepository;
 import cz.osu.praxeo.dto.UserDto;
+import cz.osu.praxeo.entity.Purpose;
 import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.entity.VerificationToken;
@@ -64,6 +65,7 @@ public class UserService  implements UserDetailsService {
         verificationToken.setToken(token);
         verificationToken.setUser(user);
         verificationToken.setExpiryDate(LocalDateTime.now().plusHours(24));
+        verificationToken.setPurpose(Purpose.REGISTER);
         tokenRepository.save(verificationToken);
 
         String frontendUrl = System.getenv("FRONTEND_URL");
@@ -144,4 +146,76 @@ public class UserService  implements UserDetailsService {
     public VerificationToken findRoleByToken(String token) {
         return tokenRepository.findByToken(token).orElse(null);
     }
+
+    public void sendMailForPasswordReset(String email) {
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            throw new UserException("Uživatel s tímto e-mailem neexistuje.");
+        }
+
+        if (!user.isActive()) {
+            throw new UserException("Uživatel nedokončil registraci a nemůže obnovit heslo.");
+        }
+
+        String token = UUID.randomUUID().toString();
+
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(token);
+        verificationToken.setUser(user);
+        verificationToken.setExpiryDate(LocalDateTime.now().plusHours(24));
+        verificationToken.setPurpose(Purpose.RESET_PASSWORD);
+        tokenRepository.save(verificationToken);
+
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        if (frontendUrl == null || frontendUrl.isBlank()) {
+            frontendUrl = "http://localhost:5173";
+        }
+
+        String link = frontendUrl + "/reset-password?token=" + token;
+
+        emailService.sendPasswordResetEmail(user.getEmail(), link);
+    }
+
+
+    public Map<String, Object> resetPassword(String token, String newPassword) {
+        Optional<VerificationToken> optional = tokenRepository.findByToken(token);
+
+        if (optional.isEmpty()) {
+            return Map.of(
+                    "success", false,
+                    "message", "Neplatný nebo expirovaný token"
+            );
+        }
+
+        VerificationToken vt = optional.get();
+
+        if (!vt.getPurpose().equals(Purpose.RESET_PASSWORD)) {
+            return Map.of(
+                    "success", false,
+                    "message", "Token není určen pro obnovu hesla"
+            );
+        }
+
+        if (vt.getExpiryDate().isBefore(LocalDateTime.now())) {
+            return Map.of(
+                    "success", false,
+                    "message", "Token expiroval"
+            );
+        }
+
+        User user = vt.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        tokenRepository.delete(vt);
+
+        return Map.of(
+                "success", true,
+                "message", "Heslo bylo změněno.",
+                "email", user.getEmail()
+        );
+    }
+
+
 }

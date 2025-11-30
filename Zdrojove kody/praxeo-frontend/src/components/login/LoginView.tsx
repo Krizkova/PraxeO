@@ -37,7 +37,7 @@ const LoginView: React.FC = () => {
 
                     <Form.Text
                         role="button"
-                        className="text-primary mb-3"
+                        className="text-secondary mb-3"
                         onClick={() => navigate("/forgot-password")}
                         style={{ cursor: "pointer" }}
                     >

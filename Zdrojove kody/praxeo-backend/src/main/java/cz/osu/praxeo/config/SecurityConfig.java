@@ -42,9 +42,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/login",
-                                "/api/users/registerUser",
-                                "/api/users/set-password",
+                                "/api/users/register-user",
+                                "/api/users/complete-registration",
                                 "/api/users/role-by-token",
+                                "/api/users/forgot-password",
+                                "/api/users/reset-password",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()

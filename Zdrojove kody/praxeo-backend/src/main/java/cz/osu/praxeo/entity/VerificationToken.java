@@ -21,4 +21,8 @@ public class VerificationToken {
     private User user;
 
     private LocalDateTime expiryDate;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Purpose purpose;
 }

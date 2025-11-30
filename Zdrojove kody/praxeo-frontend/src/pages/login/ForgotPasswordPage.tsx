@@ -17,7 +17,7 @@ const ForgotPasswordPage: React.FC = () => {
             alert("Pokyny k obnovení hesla byly odeslány na váš e-mail.");
             navigate("/");
         } catch (err: any) {
-            alert("Chyba: " + err.message);
+            alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
         } finally {
             setLoading(false);
         }
