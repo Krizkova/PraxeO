@@ -1,6 +1,6 @@
 package cz.osu.praxeo.controller;
 
-import cz.osu.praxeo.dto.LoginRequest;
+import cz.osu.praxeo.dto.LoginRequestDto;
 import cz.osu.praxeo.dto.UserDto;
 import cz.osu.praxeo.entity.RefreshToken;
 import cz.osu.praxeo.entity.User;
@@ -30,14 +30,14 @@ public class AuthController {
 
     @PostMapping("/login")
     @PermitAll
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
-        User user = userService.findByEmail(loginRequest.getEmail());
+    public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto) {
+        User user = userService.findByEmail(loginRequestDto.getEmail());
         if (user == null) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body("Uživatel neexistuje");
         }
-        if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neplatné přihlašovací údaje");
         }
 

@@ -8,6 +8,7 @@ import SummaryOfPracticesPage from "../pages/SummaryOfPracticesPage";
 import RegisterUserPage from "../pages/register/RegisterUserPage";
 import ForgotPasswordPage from "../pages/login/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/login/ResetPasswordPage";
+import PracticeDetailPage from "../pages/PracticeDetailPage";
 
 const AppRouter: React.FC = () => {
     return (
@@ -19,6 +20,8 @@ const AppRouter: React.FC = () => {
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/summary" element={<SummaryOfPracticesPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/practices/:id" element={<PracticeDetailPage />} />
+
         </Routes>
     );
 };

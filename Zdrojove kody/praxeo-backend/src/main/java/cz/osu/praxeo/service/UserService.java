@@ -13,6 +13,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,16 +30,15 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class UserService  implements UserDetailsService {
-
-    @Value("${university.email.domain}")
-    private String universityEmailDomain;
+public class UserService implements UserDetailsService {
 
     private final UserMapper userMapper;
     private final UserRepository userRepository;
     private final VerificationTokenRepository tokenRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    @Value("${university.email.domain}")
+    private String universityEmailDomain;
 
     @Transactional
     public UserDto registerUser(UserDto userDto) {
@@ -218,4 +219,10 @@ public class UserService  implements UserDetailsService {
     }
 
 
+    public User getCurrentUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return null;
+        String email = auth.getName();
+        return findByEmail(email);
+    }
 }
