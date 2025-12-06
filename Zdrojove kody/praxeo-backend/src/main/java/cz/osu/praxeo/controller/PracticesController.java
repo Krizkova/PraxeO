@@ -1,6 +1,9 @@
 package cz.osu.praxeo.controller;
 
+import cz.osu.praxeo.dao.PracticeDetailRepository;
+import cz.osu.praxeo.dto.PracticeDetailDto;
 import cz.osu.praxeo.dto.PracticesDto;
+import cz.osu.praxeo.entity.PracticeDetail;
 import cz.osu.praxeo.entity.Practices;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import cz.osu.praxeo.mapper.UserMapper;
@@ -20,6 +23,7 @@ public class PracticesController {
     private final PracticesService practicesService;
 
     private final PracticesMapper practicesMapper;
+    private final PracticeDetailRepository practiceDetailRepository;
 
     @PostMapping("/practices-by-role")
     public ResponseEntity<?> getPracticesByRole() {
@@ -29,7 +33,7 @@ public class PracticesController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getPracticeDetail(@PathVariable Long id) {
-        PracticesDto dto = practicesService.getPracticeDetail(id);
-        return ResponseEntity.ok(dto);
+        PracticeDetailDto detail = practicesService.getPracticeDetail(id);
+        return ResponseEntity.ok(detail);
     }
 }

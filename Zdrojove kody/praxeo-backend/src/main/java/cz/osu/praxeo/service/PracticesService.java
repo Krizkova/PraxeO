@@ -1,14 +1,19 @@
 package cz.osu.praxeo.service;
 
+import cz.osu.praxeo.dao.PracticeDetailRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
 import cz.osu.praxeo.dao.UserRepository;
+import cz.osu.praxeo.dto.PracticeDetailDto;
 import cz.osu.praxeo.dto.PracticesDto;
 import cz.osu.praxeo.dto.UserDto;
+import cz.osu.praxeo.entity.PracticeDetail;
 import cz.osu.praxeo.entity.Practices;
 import cz.osu.praxeo.entity.User;
+import cz.osu.praxeo.mapper.PracticeDetailMapper;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import cz.osu.praxeo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,8 +23,10 @@ import java.util.List;
 public class PracticesService {
 
     private final PracticesMapper practicesMapper;
+    private final PracticeDetailMapper practiceDetailMapper;
     private final UserService userService;
     private final PracticesRepository practicesRepository;
+    private final PracticeDetailRepository practiceDetailRepository;
 
     public List<PracticesDto> getPracticesByRole() {
 
@@ -53,9 +60,9 @@ public class PracticesService {
                 .toList();
     }
 
-    public PracticesDto getPracticeDetail(Long id) {
-        Practices p = practicesRepository.findById(id).orElse(null);
-        if (p == null) return null;
-        return practicesMapper.toDto(p);
+    public PracticeDetailDto getPracticeDetail(Long id) {
+        PracticeDetail detail = practiceDetailRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Detail nenalezen"));
+        return practiceDetailMapper.toDto(detail);
     }
 }
