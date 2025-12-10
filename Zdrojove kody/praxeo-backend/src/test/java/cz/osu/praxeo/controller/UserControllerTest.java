@@ -9,13 +9,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.mail.javamail.JavaMailSender;
 import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @Transactional
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@ActiveProfiles("test")
 class UserControllerTest {
+
+    @MockBean
+    private JavaMailSender javaMailSender;
 
     @Autowired
     private UserController userController;
@@ -67,6 +73,20 @@ class UserControllerTest {
         // ✅ očekáváme 400 + text "Email už existuje"
         assertEquals(HttpStatus.CONFLICT, duplicateResponse.getStatusCode());
         assertTrue(duplicateResponse.getBody().toString().toLowerCase().contains("email"));
+    }
+
+    @Test
+    @Order(3)
+    void userRegisterEmptyEmail() {
+        UserDto dto = new UserDto();
+        dto.setFirstName("Jana");
+        dto.setLastName("Králová");
+        dto.setEmail("");
+        dto.setStudentNumber("P555257");
+
+        ResponseEntity<?> response = userController.registerUser(dto);
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(response.getBody().toString().toLowerCase().contains("email"));
     }
 
     @AfterEach
