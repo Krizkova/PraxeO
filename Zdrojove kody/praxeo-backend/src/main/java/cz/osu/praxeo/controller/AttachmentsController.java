@@ -32,6 +32,10 @@ public class AttachmentsController {
     public ResponseEntity<?> upload(@PathVariable Long practiceDetailId,
                                     @RequestParam("file") MultipartFile file) throws IOException {
 
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity.badRequest().body("Soubor nesmí být prázdný");
+        }
+
         AttachmentDto dto = attachmentService.uploadAttachment(practiceDetailId, file);
         return ResponseEntity.ok(dto);
     }
