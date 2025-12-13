@@ -35,6 +35,12 @@ public class UserController {
     @PermitAll
     @PostMapping("/register-user")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserDto dto) {
+        //kontrola na prazdny mail
+        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("Email nesmí být prázdný");
+        }
         try {
             UserDto registered = userService.registerUser(dto);
             return ResponseEntity.ok(Map.of(

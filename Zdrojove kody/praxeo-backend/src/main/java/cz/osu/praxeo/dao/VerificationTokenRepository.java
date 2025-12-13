@@ -7,4 +7,7 @@ import java.util.Optional;
 
 public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Long> {
     Optional<VerificationToken> findByToken(String token);
+
+    // nový method pro test completeRegistrationSuccess
+    Optional<VerificationToken> findByUser(cz.osu.praxeo.entity.User user);
 }
