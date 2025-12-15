@@ -19,7 +19,6 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.mail.javamail.JavaMailSender;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.LinkedHashMap;
 
 @SpringBootTest
 @ActiveProfiles("test")

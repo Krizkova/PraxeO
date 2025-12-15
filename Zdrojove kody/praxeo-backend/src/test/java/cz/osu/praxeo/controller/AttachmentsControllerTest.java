@@ -24,7 +24,7 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(1)
-    @DisplayName("POST /api/attachments/upload/{practiceDetailId} - úspěšné nahrání souboru")
+    @DisplayName("POST /api/attachments/upload/{practiceDetailId} – úspěšné nahrání souboru")
     void upload_ok() throws Exception {
         MultipartFile mf = new MockMultipartFile(
                     "file", "test.txt", "text/plain", "abc".getBytes()
@@ -41,7 +41,7 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(2)
-    @DisplayName("GET /api/attachments/by-practice/{id} - vrátí seznam příloh")
+    @DisplayName("GET /api/attachments/by-practice/{id} – vrátí seznam příloh")
     void getAttachments_ok() {
         ResponseEntity<?> response = controller.getAttachments(100L);
 
@@ -52,7 +52,7 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(3)
-    @DisplayName("DELETE /api/attachments/{id} - úspěšné smazání")
+    @DisplayName("DELETE /api/attachments/{id} – úspěšné smazání")
     void delete_found() {
         ResponseEntity<?> response = controller.delete(1L);
 
@@ -61,7 +61,7 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(4)
-    @DisplayName("DELETE /api/attachments/{id} - příloha nenalezena")
+    @DisplayName("DELETE /api/attachments/{id} – příloha nenalezena")
     void delete_notFound() {
         ResponseEntity<?> response = controller.delete(2L);
 
@@ -70,7 +70,7 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(5)
-    @DisplayName("GET /api/attachments/{id}/download - úspěšné stažení souboru")
+    @DisplayName("GET /api/attachments/{id}/download – úspěšné stažení souboru")
     void download_ok() {
         ResponseEntity<byte[]> response = controller.download(5L);
 
@@ -84,7 +84,7 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(6)
-    @DisplayName("POST /api/attachments/upload/{practiceDetailId} - prázdný soubor")
+    @DisplayName("POST /api/attachments/upload/{practiceDetailId} – prázdný soubor")
     void upload_emptyFile() throws Exception {
         MultipartFile mf = new MockMultipartFile(
                 "file", "empty.txt", "text/plain", new byte[0]
@@ -99,27 +99,11 @@ class AttachmentsControllerTest {
 
     @Test
     @Order(7)
-    @DisplayName("POST /api/attachments/upload/{practiceDetailId} - null soubor -> 400")
+    @DisplayName("POST /api/attachments/upload/{practiceDetailId} – null soubor")
     void upload_nullFile() throws Exception {
         ResponseEntity<?> response = controller.upload(10L, null);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
     }
-
-    /*@Test
-    @Order(8)
-    @DisplayName("POST /api/attachments/upload/{practiceDetailId} - nahrání PNG souboru")
-    void upload_pngFile() throws Exception {
-        MultipartFile mf = new MockMultipartFile(
-        );
-
-        ResponseEntity<?> response = controller.upload(20L, mf);
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        AttachmentDto body = (AttachmentDto) response.getBody();
-        assertNotNull(body);
-        assertEquals("image.png", body.getTitle());
-        assertEquals("image/png", body.getFileType());
-    }*/
 
 }

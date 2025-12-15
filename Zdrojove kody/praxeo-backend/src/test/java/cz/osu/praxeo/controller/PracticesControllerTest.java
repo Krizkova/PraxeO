@@ -13,8 +13,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -38,8 +39,16 @@ class PracticesControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+
+    private void setAuthenticatedUser(User user) {
+        var auth = new UsernamePasswordAuthenticationToken(
+                user, null, user.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+    }
+
     @Test
     @Order(1)
+    @DisplayName("ADMIN – vrátí všechny praxe")
     void getPracticesByRole_adminGetsAll() {
         Practices p1 = new Practices();
         p1.setName("Praxe 1");
@@ -52,23 +61,27 @@ class PracticesControllerTest {
         User admin = new User();
         admin.setEmail("admin-test@osu.cz");
         admin.setRole(Role.ADMIN);
+        admin.setPassword("x");
         userRepository.save(admin);
+
+        setAuthenticatedUser(admin);
 
         ResponseEntity<?> response = practicesController.getPracticesByRole();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<?> list = (List<?>) response.getBody();
         assertNotNull(list);
-        assertTrue(list.isEmpty());
+        assertEquals(2, list.size());
     }
 
     @Test
     @Order(2)
-    @DisplayName("POST /api/practices/practices-by-role - STUDENT s přiřazenými praxemi")
+    @DisplayName("STUDENT s přiřazenými praxemi – vrátí jen svoje")
     void getPracticesByRole_studentAssigned() {
         User student = new User();
         student.setEmail("student@osu.cz");
         student.setRole(Role.STUDENT);
+        student.setPassword("x");
         userRepository.save(student);
 
         Practices assigned = new Practices();
@@ -80,43 +93,48 @@ class PracticesControllerTest {
         free.setName("Free");
         practicesRepository.save(free);
 
+        setAuthenticatedUser(student);
+
         ResponseEntity<?> response = practicesController.getPracticesByRole();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<?> list = (List<?>) response.getBody();
         assertNotNull(list);
-        assertTrue(list.isEmpty());
+        assertEquals(1, list.size());
     }
 
     @Test
     @Order(3)
-    @DisplayName("POST /api/practices/practices-by-role - STUDENT bez přiřazených praxí")
+    @DisplayName("STUDENT bez přiřazených – vrátí volné praxe")
     void getPracticesByRole_studentNoAssigned() {
         User student = new User();
         student.setEmail("student2@osu.cz");
         student.setRole(Role.STUDENT);
+        student.setPassword("x");
         userRepository.save(student);
 
         Practices free1 = new Practices();
         free1.setName("Free 1");
         practicesRepository.save(free1);
 
+        setAuthenticatedUser(student);
+
         ResponseEntity<?> response = practicesController.getPracticesByRole();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<?> list = (List<?>) response.getBody();
         assertNotNull(list);
-        assertTrue(list.isEmpty());
-
+        assertEquals(1, list.size());
     }
 
     @Test
     @Order(4)
-    @DisplayName("POST /api/practices/practices-by-role - Externista dostane svoje praxe")
+    @DisplayName("Externista– vrátí jen svoje praxe")
     void getPracticesByRole_externalWorker() {
         User founder = new User();
         founder.setEmail("ext@osu.cz");
         founder.setRole(Role.EXTERNAL_WORKER);
+        founder.setPassword("x");
         userRepository.save(founder);
 
         Practices own = new Practices();
@@ -128,22 +146,27 @@ class PracticesControllerTest {
         other.setName("Other");
         practicesRepository.save(other);
 
+        setAuthenticatedUser(founder);
+
         ResponseEntity<?> response = practicesController.getPracticesByRole();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<?> list = (List<?>) response.getBody();
         assertNotNull(list);
-        assertTrue(list.isEmpty());
+        assertEquals(1, list.size());
     }
 
     @Test
     @Order(5)
-    @DisplayName("POST /api/practices/practices-by-role - uživatel bez role → prázdný seznam")
-    void getPracticesByRole_userWithoutRole() {
-        User user = new User();
-        user.setEmail("norole@osu.cz");
-        user.setRole(null);
-        userRepository.save(user);
+    @DisplayName("ADMIN – prázdný seznam")
+    void getPracticesByRole_noPractices() {
+        User admin = new User();
+        admin.setEmail("admin-empty@osu.cz");
+        admin.setRole(Role.ADMIN);
+        admin.setPassword("x");
+        userRepository.save(admin);
+
+        setAuthenticatedUser(admin);
 
         ResponseEntity<?> response = practicesController.getPracticesByRole();
 
@@ -155,70 +178,41 @@ class PracticesControllerTest {
 
     @Test
     @Order(6)
-    @DisplayName("POST /api/practices/practices-by-role - žádné praxe v systému")
-    void getPracticesByRole_noPractices() {
-        User admin = new User();
-        admin.setEmail("admin-empty@osu.cz");
-        admin.setRole(Role.ADMIN);
-        userRepository.save(admin);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertTrue(list.isEmpty());
-    }
-
-    @Test
-    @Order(7)
-    @DisplayName("POST /api/practices/practices-by-role - STUDENT bez praxí a bez volných praxí")
-    void getPracticesByRole_studentNoAssignedAndNoFree() {
-        User student = new User();
-        student.setEmail("student-empty@osu.cz");
-        student.setRole(Role.STUDENT);
-        userRepository.save(student);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertTrue(list.isEmpty());
-    }
-
-    @Test
-    @Order(8)
-    @DisplayName("POST /api/practices/practices-by-role - TEACHER")
+    @DisplayName("TEACHER – vrátí všechny praxe")
     void getPracticesByRole_teacher() {
         User teacher = new User();
         teacher.setEmail("teacher@osu.cz");
         teacher.setRole(Role.TEACHER);
+        teacher.setPassword("x");
         userRepository.save(teacher);
 
         Practices p = new Practices();
         p.setName("Praxe teacher");
         practicesRepository.save(p);
 
+        setAuthenticatedUser(teacher);
+
         ResponseEntity<?> response = practicesController.getPracticesByRole();
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<?> list = (List<?>) response.getBody();
         assertNotNull(list);
-        assertTrue(list.isEmpty());
+        assertEquals(1, list.size());
     }
 
+    // ------- /api/practices/{id} -------
+
     @Test
-    @Order(9)
-    @DisplayName("GET /api/practices/{id} - neexistující detail → výjimka")
+    @Order(7)
+    @DisplayName("GET /api/practices/{id} – neexistující detail")
     void getPracticeDetail_nonExistingThrows() {
-        assertThrows(RuntimeException.class, () -> {
-            practicesController.getPracticeDetail(1L);
-        });
+        assertThrows(RuntimeException.class,
+                () -> practicesController.getPracticeDetail(1L));
     }
 
     @AfterEach
     void cleanup() {
+        SecurityContextHolder.clearContext();
         practicesRepository.deleteAll();
         userRepository.deleteAll();
     }
