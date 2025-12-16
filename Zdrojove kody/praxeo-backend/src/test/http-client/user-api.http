@@ -1,6 +1,6 @@
 ### GET všichni uživatelé
 GET http://localhost:8080/api/users
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrcml6amUwNUBvc3UuY3oiLCJpYXQiOjE3NjI5Mjc5NzYsImV4cCI6MTc2MzAxNDM3Nn0.gp5aMXtEuu1vpus-SoqUWMdzuETcDSipz8a1AvdvbUY
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbkBvc3UuY3oiLCJpYXQiOjE3NjU5MDI5NjcsImV4cCI6MTc2NTk4OTM2N30.2s4AjjaGDqw24czsIZLnvBgMA2UIfxBnjMdsjqnTiYk
 
 ### Registrace nového studenta
 POST http://localhost:8080/api/users/register-user
@@ -16,13 +16,13 @@ POST http://localhost:8080/api/users/complete-registration
 Content-Type: application/json
 
 {
-  "token": "c01bfa37-ac0f-472c-af6d-eb8539fe6e3f",
+  "token": "07f5295a-9ab6-427c-b15d-985fdece3203",
   "password": "Heslo123"
 }
 
 ### Test přihlášeného uživatele - token z /api/auth/login
 GET http://localhost:8080/api/users/me
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrcml6amUwNUBvc3UuY3oiLCJpYXQiOjE3NjI5Mjc5NzYsImV4cCI6MTc2MzAxNDM3Nn0.gp5aMXtEuu1vpus-SoqUWMdzuETcDSipz8a1AvdvbUY
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJrcml6amUwNUBvc3UuY3oiLCJpYXQiOjE3NjU5MDM4OTcsImV4cCI6MTc2NTk5MDI5N30.upEwWJd0lnRHkGfeNu3CYe5tje3QsrZAgS6ujsuy-Lo
 
 ### Zapomenuté heslo – odeslání e-mailu
 POST http://localhost:8080/api/users/forgot-password
@@ -30,4 +30,13 @@ Content-Type: application/json
 
 {
   "email": "krizje05@osu.cz"
+}
+
+### Obnovení hesla pomocí tokenu z e-mailu
+POST http://localhost:8080/api/users/reset-password
+Content-Type: application/json
+
+{
+  "token": "69cbd095-3921-4e06-96e8-a35f759187af",
+  "password": "Heslo123"
 }

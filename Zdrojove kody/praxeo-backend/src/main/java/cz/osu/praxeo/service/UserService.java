@@ -7,12 +7,11 @@ import cz.osu.praxeo.entity.Purpose;
 import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.entity.VerificationToken;
-import cz.osu.praxeo.exception.UserException;
 import cz.osu.praxeo.mapper.UserMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,7 +43,10 @@ public class UserService implements UserDetailsService {
     @Transactional
     public UserDto registerUser(UserDto userDto) {
         if (userRepository.existsByEmail(userDto.getEmail())) {
-            throw new UserException("Email už existuje");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Email už existuje"
+            );
         }
 
         User user = userMapper.toEntity(userDto);
@@ -55,7 +58,10 @@ public class UserService implements UserDetailsService {
         }
         if ((user.getRole() == Role.STUDENT || user.getRole() == Role.TEACHER)
                 && !user.getEmail().toLowerCase().endsWith(universityEmailDomain)) {
-            throw new UserException("Učitelé a studenti musí mít univerzitní e-mail končící na @osu.cz");
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Učitelé a studenti musí mít univerzitní e-mail končící na @osu.cz"
+            );
         }
         user.setActive(false);
         user = userRepository.save(user);
@@ -152,11 +158,17 @@ public class UserService implements UserDetailsService {
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            throw new UserException("Uživatel s tímto e-mailem neexistuje.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Uživatel s tímto e-mailem neexistuje."
+            );
         }
 
         if (!user.isActive()) {
-            throw new UserException("Uživatel nedokončil registraci a nemůže obnovit heslo.");
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Uživatel nedokončil registraci a nemůže obnovit heslo."
+            );
         }
 
         String token = UUID.randomUUID().toString();
