@@ -48,13 +48,13 @@ public class AttachmentsController {
 
     @GetMapping("/{id}/download")
     public ResponseEntity<byte[]> download(@PathVariable Long id) {
-        Attachment a = attachmentService.getAttachmentEntity(id);
-
-        String filename = URLEncoder.encode(a.getTitle(), StandardCharsets.UTF_8);
+        Attachment attachment = attachmentService.getAttachmentEntity(id);
+        byte[] fileData = attachmentService.getFileData(id);
+        String filename = URLEncoder.encode(attachment.getTitle(), StandardCharsets.UTF_8);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.parseMediaType(a.getFileType()))
-                .body(a.getFileData());
+                .contentType(MediaType.parseMediaType(attachment.getFileType()))
+                .body(fileData);
     }
 }

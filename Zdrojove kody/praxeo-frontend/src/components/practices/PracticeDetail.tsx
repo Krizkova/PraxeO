@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-    getPracticeDetail,
+    getPractice,
     getAttachmentsForPractice,
     uploadAttachment,
     deleteAttachment,
@@ -13,7 +13,6 @@ const PracticeDetail: React.FC = () => {
     const { id } = useParams();
 
     const [practice, setPractice] = useState<any>(null);
-    const [detail, setDetail] = useState<any>(null);
     const [attachments, setAttachments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -22,12 +21,10 @@ const PracticeDetail: React.FC = () => {
         if (!id) return;
         setLoading(true);
 
-        getPracticeDetail(id)
-            .then((detailDto) => {
-                setDetail(detailDto);
-                setPractice(detailDto.practice);
-
-                return getAttachmentsForPractice(detailDto.id);
+        getPractice(id)
+            .then((practiceDto) => {
+                setPractice(practiceDto);
+                return getAttachmentsForPractice(practiceDto.id);
             })
             .then((files) => {
                 setAttachments(files || []);
@@ -37,9 +34,9 @@ const PracticeDetail: React.FC = () => {
     }, [id]);
 
     const handleFileUpload = (file: File) => {
-        if (!detail) return;
+        if (!practice) return;
 
-        uploadAttachment(detail.id, file)
+        uploadAttachment(practice.id, file)
             .then((newFile) => {
                 setAttachments(prev => [...prev, newFile]);
             })
@@ -69,7 +66,6 @@ const PracticeDetail: React.FC = () => {
     return (
         <PracticeDetailView
             practice={practice}
-            detail={detail}
             loading={loading}
             error={error}
             attachments={attachments}

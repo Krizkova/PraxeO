@@ -1,21 +1,20 @@
 package cz.osu.praxeo.service;
 
-import cz.osu.praxeo.dao.PracticeDetailRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
 import cz.osu.praxeo.dao.UserRepository;
-import cz.osu.praxeo.dto.PracticeDetailDto;
 import cz.osu.praxeo.dto.PracticesDto;
 import cz.osu.praxeo.dto.UserDto;
-import cz.osu.praxeo.entity.PracticeDetail;
+import cz.osu.praxeo.entity.PracticeState;
 import cz.osu.praxeo.entity.Practices;
 import cz.osu.praxeo.entity.User;
-import cz.osu.praxeo.mapper.PracticeDetailMapper;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import cz.osu.praxeo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,10 +22,8 @@ import java.util.List;
 public class PracticesService {
 
     private final PracticesMapper practicesMapper;
-    private final PracticeDetailMapper practiceDetailMapper;
     private final UserService userService;
     private final PracticesRepository practicesRepository;
-    private final PracticeDetailRepository practiceDetailRepository;
 
     public List<PracticesDto> getPracticesByRole() {
 
@@ -65,9 +62,30 @@ public class PracticesService {
                 .toList();
     }
 
-    public PracticeDetailDto getPracticeDetail(Long id) {
-        PracticeDetail detail = practiceDetailRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Detail nenalezen"));
-        return practiceDetailMapper.toDto(detail);
+    public PracticesDto getPracticeById(Long id) {
+        Practices practice = practicesRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
+
+        return practicesMapper.toDto(practice);
+    }
+
+    public PracticesDto createPractice(String name, String description, LocalDate completedAt) {
+        User founder = userService.getCurrentUser();
+        Practices practice = new Practices();
+        practice.setName(name);
+        practice.setDescription(description);
+        practice.setCreatedAt(LocalDateTime.now());
+        practice.setSelectedAt(null);
+        if (completedAt != null) {
+            practice.setCompletedAt(completedAt.atStartOfDay());
+        }
+        practice.setState(PracticeState.NEW);
+        practice.setFounder(founder);
+        practice.setStudent(null);
+        practice.setClosed(false);
+        practice.setMarkedForExport(false);
+        Practices saved = practicesRepository.save(practice);
+
+        return practicesMapper.toDto(saved);
     }
 }

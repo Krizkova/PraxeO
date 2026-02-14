@@ -7,9 +7,6 @@ axios.defaults.withCredentials = true;
 const api = axios.create({
     baseURL: API,
     withCredentials: true,
-    headers: {
-        "Content-Type": "application/json"
-    }
 });
 
 export const getPracticesByRole = async () => {
@@ -17,22 +14,22 @@ export const getPracticesByRole = async () => {
     return res.data;
 };
 
-export const getPracticeDetail = async (id: number | string) => {
+export const getPractice = async (id: number | string) => {
     const res = await api.get(`/practices/${id}`);
     return res.data;
 };
 
-export const getAttachmentsForPractice = async (practiceDetailId: string | number) => {
-    const res = await api.get(`/attachments/by-practice/${practiceDetailId}`);
+export const getAttachmentsForPractice = async (practiceId: string | number) => {
+    const res = await api.get(`/attachments/by-practice/${practiceId}`);
     return res.data;
 };
 
-export const uploadAttachment = async (practiceDetailId: string | number, file: File) => {
+export const uploadAttachment = async (practiceId: string | number, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
 
     const res = await api.post(
-        `/attachments/upload/${practiceDetailId}`,
+        `/attachments/upload/${practiceId}`,
         formData,
         {
             headers: {
@@ -53,4 +50,13 @@ export const downloadAttachment = async (id: number) => {
     return api.get(`/attachments/${id}/download`, {
         responseType: "blob"
     });
+};
+
+export const createPractice = async (data: {
+    name: string;
+    description: string;
+    completedAt: string;
+}) => {
+    const res = await api.post("/practices/create", data);
+    return res.data;
 };

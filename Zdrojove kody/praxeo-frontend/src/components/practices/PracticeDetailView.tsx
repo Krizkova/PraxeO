@@ -1,18 +1,17 @@
 import React from "react";
 import { Spinner, Alert, Button } from "react-bootstrap";
+import {translatePracticeState} from "../../utils/practiceState";
 
 interface PracticeDto {
     id: number;
     name: string;
     description: string;
-    companyName: string;
-    validFrom: string;
-    validTo: string;
-}
-
-interface PracticeDetailDto {
-    id: number;
-    practice: PracticeDto;
+    createdAt: string;
+    selectedAt: string | null;
+    completedAt: string | null;
+    state: string;
+    founderEmail: string | null;
+    studentEmail: string | null;
     finalEvaluation: string | null;
     closed: boolean;
     markedForExport: boolean;
@@ -20,7 +19,6 @@ interface PracticeDetailDto {
 
 interface Props {
     practice: PracticeDto;
-    detail: PracticeDetailDto;
     loading: boolean;
     error: string | null;
     attachments: any[];
@@ -30,14 +28,13 @@ interface Props {
 }
 
 const formatDate = (value: string | null) => {
-    if (!value) return "";
+    if (!value) return "—";
     const d = new Date(value);
     return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 };
 
 const PracticeDetailView: React.FC<Props> = ({
                                                  practice,
-                                                 detail,
                                                  loading,
                                                  error,
                                                  attachments,
@@ -47,7 +44,7 @@ const PracticeDetailView: React.FC<Props> = ({
                                              }) => {
     if (loading) return <Spinner animation="border" />;
     if (error) return <Alert variant="danger">{error}</Alert>;
-    if (!practice || !detail) return null;
+    if (!practice) return null;
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -62,19 +59,13 @@ const PracticeDetailView: React.FC<Props> = ({
                 <div>
                     <p><strong>Název praxe:</strong> {practice.name}</p>
                     <p><strong>Popis:</strong> {practice.description}</p>
-                    <p><strong>Název firmy:</strong> {practice.companyName}</p>
-                    <p>
-                        <strong>Trvání:</strong>{" "}
-                        {formatDate(practice.validFrom)} – {formatDate(practice.validTo)}
-                    </p>
-                    <p>
-                        <strong>Hodnocení praxe:</strong>{" "}
-                        {detail.finalEvaluation ? detail.finalEvaluation : "—"}
-                    </p>
-                    <p>
-                        <strong>Stav:</strong>{" "}
-                        {detail.closed ? "Uzavřená" : "Otevřená"}
-                    </p>
+                    <p><strong>Zakladatel:</strong> {practice.founderEmail ?? "—"}</p>
+                    <p><strong>Student:</strong> {practice.studentEmail ?? "—"}</p>
+                    <p><strong>Vytvořeno:</strong> {formatDate(practice.createdAt)}</p>
+                    <p><strong>Vybráno:</strong> {formatDate(practice.selectedAt)}</p>
+                    <p><strong>Ukončeno:</strong> {formatDate(practice.completedAt)}</p>
+                    <p><strong>Stav:</strong> {translatePracticeState(practice.state)}</p>
+                    <p><strong>Hodnocení:</strong> {practice.finalEvaluation ?? "—"}</p>
                 </div>
 
                 <div className="text-end">
@@ -90,7 +81,7 @@ const PracticeDetailView: React.FC<Props> = ({
                         variant="success"
                         onClick={() => document.getElementById("uploadInput")?.click()}
                     >
-                        Přidat soubory
+                        Přidat soubor
                     </Button>
 
                     {attachments.length > 0 && (
@@ -120,7 +111,6 @@ const PracticeDetailView: React.FC<Props> = ({
                                             </button>
                                         </div>
                                     </li>
-
                                 ))}
                             </ul>
                         </div>

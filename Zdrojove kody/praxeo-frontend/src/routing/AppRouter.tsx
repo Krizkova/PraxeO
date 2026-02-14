@@ -4,11 +4,12 @@ import { Routes, Route } from "react-router-dom";
 import HomePage from "../pages/HomePage";
 import RegisterStudentPage from "../pages/register/RegisterStudentPage";
 import VerifyPage from "../pages/register/VerifyPage";
-import SummaryOfPracticesPage from "../pages/SummaryOfPracticesPage";
+import SummaryOfPracticesPage from "../pages/practices/SummaryOfPracticesPage";
 import RegisterUserPage from "../pages/register/RegisterUserPage";
 import ForgotPasswordPage from "../pages/login/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/login/ResetPasswordPage";
-import PracticeDetailPage from "../pages/PracticeDetailPage";
+import PracticeDetailPage from "../pages/practices/PracticeDetailPage";
+import CreatePracticePage from "../pages/practices/CreatePracticePage";
 
 const AppRouter: React.FC = () => {
     return (
@@ -21,6 +22,7 @@ const AppRouter: React.FC = () => {
             <Route path="/summary" element={<SummaryOfPracticesPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/practices/:id" element={<PracticeDetailPage />} />
+            <Route path="/practices/create" element={<CreatePracticePage />} />
 
         </Routes>
     );

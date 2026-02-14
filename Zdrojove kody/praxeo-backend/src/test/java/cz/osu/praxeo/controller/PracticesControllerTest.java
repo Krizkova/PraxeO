@@ -207,7 +207,7 @@ class PracticesControllerTest {
     @DisplayName("GET /api/practices/{id} – neexistující detail")
     void getPracticeDetail_nonExistingThrows() {
         assertThrows(RuntimeException.class,
-                () -> practicesController.getPracticeDetail(1L));
+                () -> practicesController.getPractice(1L));
     }
 
     @AfterEach

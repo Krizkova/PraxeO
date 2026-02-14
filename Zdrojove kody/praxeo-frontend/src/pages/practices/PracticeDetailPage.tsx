@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/header/Header";
-import PracticeDetail from "../components/practices/PracticeDetail";
+import Header from "../../components/header/Header";
+import PracticeDetail from "../../components/practices/PracticeDetail";
 
 const PracticeDetailPage: React.FC = () => {
     const navigate = useNavigate();

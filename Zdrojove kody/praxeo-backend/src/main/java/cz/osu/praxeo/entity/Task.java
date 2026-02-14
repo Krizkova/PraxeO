@@ -20,8 +20,8 @@ public class Task {
     private String description;
 
     @ManyToOne
-    @JoinColumn(name = "practice_detail_id")
-    private PracticeDetail practiceDetail;
+    @JoinColumn(name = "practice_id")
+    private Practices practice;
 
     @ManyToOne
     @JoinColumn(name = "founder_id")
