@@ -19,6 +19,21 @@ export const getPractice = async (id: number | string) => {
     return res.data;
 };
 
+export const updatePractice = async (id: number, data: any) => {
+    const res = await api.put(`/practices/${id}`, data);
+    return res.data;
+};
+
+export const changePracticeState = async (
+    id: number,
+    state: "CANCELED" | "COMPLETED"
+) => {
+    const res = await api.put(`/practices/${id}/state`, null, {
+        params: { state }
+    });
+    return res.data;
+};
+
 export const getAttachmentsForPractice = async (practiceId: string | number) => {
     const res = await api.get(`/attachments/by-practice/${practiceId}`);
     return res.data;

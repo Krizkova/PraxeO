@@ -33,6 +33,14 @@ public class PracticesController {
         return ResponseEntity.ok(practicesService.getPracticeById(id));
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updatePractice(
+            @PathVariable Long id,
+            @RequestBody PracticesDto request
+    ) {
+        return ResponseEntity.ok(practicesService.updatePractice(id, request));
+    }
+
     @PreAuthorize("hasRole('TEACHER') or hasRole('EXTERNAL_WORKER') or hasRole('ADMIN')")
     @PostMapping("/create")
     public ResponseEntity<?> createPractice(@RequestBody PracticesDto request) {
@@ -43,5 +51,13 @@ public class PracticesController {
         );
 
         return ResponseEntity.ok(created);
+    }
+
+    @PutMapping("/{id}/state")
+    public ResponseEntity<?> changeState(
+            @PathVariable Long id,
+            @RequestParam String state
+    ) {
+        return ResponseEntity.ok(practicesService.changePracticeState(id, state));
     }
 }

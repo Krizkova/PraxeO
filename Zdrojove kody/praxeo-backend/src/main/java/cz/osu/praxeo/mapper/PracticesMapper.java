@@ -24,7 +24,7 @@ public class PracticesMapper {
         dto.setCreatedAt(practices.getCreatedAt());
         dto.setSelectedAt(practices.getSelectedAt());
         if (practices.getCompletedAt() != null) {
-            dto.setCompletedAt(practices.getCompletedAt().toLocalDate());
+            dto.setCompletedAt(practices.getCompletedAt());
         }
         dto.setState(practices.getState() != null ? practices.getState().name() : null);
         dto.setFounderEmail(
@@ -34,6 +34,7 @@ public class PracticesMapper {
                 practices.getStudent() != null ? practices.getStudent().getEmail() : null
         );
         dto.setFinalEvaluation(practices.getFinalEvaluation());
+        dto.setStudentEvaluation(practices.getStudentEvaluation());
         dto.setClosed(practices.isClosed());
         dto.setMarkedForExport(practices.isMarkedForExport());
         if (practices.getTasks() != null) {

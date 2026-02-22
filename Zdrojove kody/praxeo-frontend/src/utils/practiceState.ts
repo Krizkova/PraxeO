@@ -2,6 +2,7 @@ export const stateLabels: Record<string, string> = {
     NEW: "Nový",
     ACTIVE: "Aktivní",
     COMPLETED: "Dokončený",
+    SUBMITTED: "Odevzdaný",
     CANCELED: "Zrušený"
 };
 

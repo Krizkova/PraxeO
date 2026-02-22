@@ -5,11 +5,18 @@ import {
     getAttachmentsForPractice,
     uploadAttachment,
     deleteAttachment,
-    downloadAttachment
+    downloadAttachment,
+    updatePractice,
+    changePracticeState
 } from "../../api/practicesApi";
 import PracticeDetailView from "./PracticeDetailView";
 
-const PracticeDetail: React.FC = () => {
+interface Props {
+    editMode: boolean;
+    setEditMode: (value: boolean) => void;
+}
+
+const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
     const { id } = useParams();
 
     const [practice, setPractice] = useState<any>(null);
@@ -33,14 +40,36 @@ const PracticeDetail: React.FC = () => {
             .finally(() => setLoading(false));
     }, [id]);
 
+    if (!practice) return null;
+
+    const canEdit =
+        practice.canEditFounderFields ||
+        practice.canEditStudentFields ||
+        practice.canEditFinalEvaluation;
+
+    const canUpload = practice.canUploadAttachments;
+
+    const handleUpdate = (data: any) => {
+        updatePractice(practice.id, data)
+            .then(updated => {
+                setPractice(updated);
+                setEditMode(false);
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
+    };
+
     const handleFileUpload = (file: File) => {
-        if (!practice) return;
+        if (!canUpload) return;
 
         uploadAttachment(practice.id, file)
             .then((newFile) => {
                 setAttachments(prev => [...prev, newFile]);
             })
-            .catch(() => alert("Nepodařilo se nahrát soubor."));
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
     };
 
     const handleDeleteAttachment = (attachmentId: number) => {
@@ -48,7 +77,9 @@ const PracticeDetail: React.FC = () => {
             .then(() => {
                 setAttachments(prev => prev.filter(a => a.id !== attachmentId));
             })
-            .catch(() => alert("Nepodařilo se odstranit soubor."));
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
     };
 
     const handleDownloadAttachment = (attachmentId: number, title: string) => {
@@ -63,15 +94,36 @@ const PracticeDetail: React.FC = () => {
         });
     };
 
+    const handleChangeState = (state: "CANCELED" | "COMPLETED") => {
+        changePracticeState(practice.id, state)
+            .then(updated => {
+                setPractice(updated);
+                setEditMode(false);
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
+    };
+
     return (
         <PracticeDetailView
             practice={practice}
             loading={loading}
             error={error}
             attachments={attachments}
+            editMode={editMode}
+            setEditMode={setEditMode}
+            canEdit={canEdit}
+            canEditFounder={practice.canEditFounderFields}
+            canEditStudent={practice.canEditStudentFields}
+            canEditFinalEvaluation={practice.canEditFinalEvaluation}
+            canChangeState={practice.canChangeState && !practice.closed}
+            canUpload={canUpload}
+            onUpdate={handleUpdate}
             onFileUpload={handleFileUpload}
             onDeleteAttachment={handleDeleteAttachment}
             onDownloadAttachment={handleDownloadAttachment}
+            onChangeState={handleChangeState}
         />
     );
 };

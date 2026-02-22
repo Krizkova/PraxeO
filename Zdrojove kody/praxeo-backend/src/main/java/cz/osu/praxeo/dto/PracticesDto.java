@@ -20,7 +20,15 @@ public class PracticesDto {
     private String founderEmail;
     private String studentEmail;
     private String finalEvaluation;
+    private String studentEvaluation;
     private boolean closed;
     private boolean markedForExport;
     private List<TaskDto> tasks;
+
+    private boolean canEditFounderFields;
+    private boolean canEditStudentFields;
+    private boolean canUploadAttachments;
+    private boolean canEditTasks;
+    private boolean canEditFinalEvaluation;
+    private boolean canChangeState;
 }
