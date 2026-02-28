@@ -1,19 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-    getPracticeDetail,
+    getPractice,
     getAttachmentsForPractice,
     uploadAttachment,
     deleteAttachment,
-    downloadAttachment
+    downloadAttachment,
+    updatePractice,
+    changePracticeState
 } from "../../api/practicesApi";
 import PracticeDetailView from "./PracticeDetailView";
 
-const PracticeDetail: React.FC = () => {
+interface Props {
+    editMode: boolean;
+    setEditMode: (value: boolean) => void;
+}
+
+const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
     const { id } = useParams();
 
     const [practice, setPractice] = useState<any>(null);
-    const [detail, setDetail] = useState<any>(null);
     const [attachments, setAttachments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -22,12 +28,10 @@ const PracticeDetail: React.FC = () => {
         if (!id) return;
         setLoading(true);
 
-        getPracticeDetail(id)
-            .then((detailDto) => {
-                setDetail(detailDto);
-                setPractice(detailDto.practice);
-
-                return getAttachmentsForPractice(detailDto.id);
+        getPractice(id)
+            .then((practiceDto) => {
+                setPractice(practiceDto);
+                return getAttachmentsForPractice(practiceDto.id);
             })
             .then((files) => {
                 setAttachments(files || []);
@@ -36,14 +40,36 @@ const PracticeDetail: React.FC = () => {
             .finally(() => setLoading(false));
     }, [id]);
 
-    const handleFileUpload = (file: File) => {
-        if (!detail) return;
+    if (!practice) return null;
 
-        uploadAttachment(detail.id, file)
+    const canEdit =
+        practice.canEditFounderFields ||
+        practice.canEditStudentFields ||
+        practice.canEditFinalEvaluation;
+
+    const canUpload = practice.canUploadAttachments;
+
+    const handleUpdate = (data: any) => {
+        updatePractice(practice.id, data)
+            .then(updated => {
+                setPractice(updated);
+                setEditMode(false);
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
+    };
+
+    const handleFileUpload = (file: File) => {
+        if (!canUpload) return;
+
+        uploadAttachment(practice.id, file)
             .then((newFile) => {
                 setAttachments(prev => [...prev, newFile]);
             })
-            .catch(() => alert("Nepodařilo se nahrát soubor."));
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
     };
 
     const handleDeleteAttachment = (attachmentId: number) => {
@@ -51,7 +77,9 @@ const PracticeDetail: React.FC = () => {
             .then(() => {
                 setAttachments(prev => prev.filter(a => a.id !== attachmentId));
             })
-            .catch(() => alert("Nepodařilo se odstranit soubor."));
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
     };
 
     const handleDownloadAttachment = (attachmentId: number, title: string) => {
@@ -66,16 +94,36 @@ const PracticeDetail: React.FC = () => {
         });
     };
 
+    const handleChangeState = (state: "CANCELED" | "COMPLETED") => {
+        changePracticeState(practice.id, state)
+            .then(updated => {
+                setPractice(updated);
+                setEditMode(false);
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
+    };
+
     return (
         <PracticeDetailView
             practice={practice}
-            detail={detail}
             loading={loading}
             error={error}
             attachments={attachments}
+            editMode={editMode}
+            setEditMode={setEditMode}
+            canEdit={canEdit}
+            canEditFounder={practice.canEditFounderFields}
+            canEditStudent={practice.canEditStudentFields}
+            canEditFinalEvaluation={practice.canEditFinalEvaluation}
+            canChangeState={practice.canChangeState && !practice.closed}
+            canUpload={canUpload}
+            onUpdate={handleUpdate}
             onFileUpload={handleFileUpload}
             onDeleteAttachment={handleDeleteAttachment}
             onDownloadAttachment={handleDownloadAttachment}
+            onChangeState={handleChangeState}
         />
     );
 };

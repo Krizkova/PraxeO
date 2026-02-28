@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import Header from "../components/header/Header";
-import PracticeDetail from "../components/practices/PracticeDetail";
+import Header from "../../components/header/Header";
+import CreatePractice from "../../components/practices/CreatePractice";
 
-const PracticeDetailPage: React.FC = () => {
+const CreatePracticePage: React.FC = () => {
     const navigate = useNavigate();
 
     return (
@@ -12,15 +12,15 @@ const PracticeDetailPage: React.FC = () => {
             <div className="container mt-4">
                 <button
                     className="btn btn-outline-success mb-4"
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/summary")}
                 >
                     ← Zpět
                 </button>
-                <h2 className="mb-4">Detail praxe</h2>
-                <PracticeDetail />
+                <h2 className="mb-4">Vytvořit praxi</h2>
+                <CreatePractice />
             </div>
         </>
     );
 };
 
-export default PracticeDetailPage;
+export default CreatePracticePage;

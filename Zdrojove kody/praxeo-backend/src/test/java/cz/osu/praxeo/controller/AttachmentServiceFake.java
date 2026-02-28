@@ -11,7 +11,7 @@ import java.util.List;
 class AttachmentServiceFake extends AttachmentService {
 
     AttachmentServiceFake() {
-        super(null, null, null, null);
+        super(null, null, null, null, null);
     }
 
     @Override
@@ -43,7 +43,6 @@ class AttachmentServiceFake extends AttachmentService {
         a.setId(id);
         a.setTitle("soubor.txt");
         a.setFileType("text/plain");
-        a.setFileData("data".getBytes());
         return a;
     }
 

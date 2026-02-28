@@ -1,5 +1,6 @@
 package cz.osu.praxeo.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -18,9 +19,9 @@ public class Attachment {
 
     private String url;
 
-    @Lob
-    @Column(name = "file_data")
-    private byte[] fileData;
+    @OneToOne(mappedBy = "attachment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private AttachmentData data;
 
     private String fileType;
 
@@ -31,8 +32,8 @@ public class Attachment {
     private User uploadedBy;
 
     @ManyToOne
-    @JoinColumn(name = "practice_detail_id")
-    private PracticeDetail practiceDetail;
+    @JoinColumn(name = "practice_id")
+    private Practices practice;
 
     @ManyToOne
     @JoinColumn(name = "task_id")

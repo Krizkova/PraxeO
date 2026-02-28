@@ -3,7 +3,6 @@ package cz.osu.praxeo.controller;
 import cz.osu.praxeo.dto.UserDto;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.entity.VerificationToken;
-import cz.osu.praxeo.exception.UserException;
 import cz.osu.praxeo.mapper.UserMapper;
 import cz.osu.praxeo.service.UserService;
 import jakarta.annotation.security.PermitAll;
@@ -35,36 +34,22 @@ public class UserController {
     @PermitAll
     @PostMapping("/register-user")
     public ResponseEntity<?> registerUser(@Valid @RequestBody UserDto dto) {
-        //kontrola na prazdny mail
-        if (dto.getEmail() == null || dto.getEmail().isBlank()) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Email nesmí být prázdný");
-        }
-        try {
-            UserDto registered = userService.registerUser(dto);
-            return ResponseEntity.ok(Map.of(
-                    "message", "Registrace úspěšná.",
-                    "email", registered.getEmail()
-            ));
-        }  catch (UserException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Registrace se nezdařila.");
-        }
+        UserDto registered = userService.registerUser(dto);
+        return ResponseEntity.ok(Map.of(
+                "message", "Registrace úspěšná.",
+                "email", registered.getEmail()
+        ));
     }
 
     @PostMapping("/complete-registration")
     @PermitAll
     public ResponseEntity<?> completeRegistration(@RequestBody Map<String, String> data) {
-        String token = (String) data.get("token");
-        String password = (String) data.get("password");
-        String firstName = (String) data.get("firstName");
-        String lastName = (String) data.get("lastName");
-        String studentNumber = (String) data.get("studentNumber");
-        String companyName = (String) data.get("companyName");
+        String token = data.get("token");
+        String password = data.get("password");
+        String firstName = data.get("firstName");
+        String lastName = data.get("lastName");
+        String studentNumber = data.get("studentNumber");
+        String companyName = data.get("companyName");
 
         Map<String, Object> result = userService.completeRegistration(
                 token, password, firstName, lastName, studentNumber, companyName
@@ -76,7 +61,7 @@ public class UserController {
     @GetMapping("/role-by-token")
     @PermitAll
     public ResponseEntity<?> getRoleByToken(@RequestParam String token) {
-        VerificationToken vt =  userService.findRoleByToken(token);
+        VerificationToken vt = userService.findRoleByToken(token);
         if (vt == null) {
             return ResponseEntity.badRequest().body("Invalid token");
         }
@@ -105,19 +90,13 @@ public class UserController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> data) {
         String email = data.get("email");
 
-        try {
-            userService.sendMailForPasswordReset(email);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "email", email,
-                    "message", "Pokyny pro obnovu hesla byly odeslány na e-mail."
-            ));
-        } catch (UserException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", e.getMessage()
-            ));
-        }
+        userService.sendMailForPasswordReset(email);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "email", email,
+                "message", "Pokyny pro obnovu hesla byly odeslány na e-mail."
+        ));
     }
 
     @PostMapping("/reset-password")
@@ -136,7 +115,6 @@ public class UserController {
 
         return ResponseEntity.ok(result);
     }
-
 
 
 }

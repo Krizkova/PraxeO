@@ -8,6 +8,7 @@ import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.entity.VerificationToken;
 import jakarta.transaction.Transactional;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -82,12 +84,13 @@ class UserControllerTest {
         duplicate.setEmail("praxeo1@osu.cz");
         duplicate.setStudentNumber("P555256");
 
-        ResponseEntity<?> duplicateResponse = userController.registerUser(duplicate);
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userController.registerUser(duplicate)
+        );
 
-        assertEquals(HttpStatus.CONFLICT, duplicateResponse.getStatusCode());
-        assertNotNull(duplicateResponse.getBody());
-        String body = duplicateResponse.getBody().toString().toLowerCase();
-        assertTrue(body.contains("email"));
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        assertTrue(ex.getReason().toLowerCase().contains("email"));
     }
 
     @Test
@@ -99,12 +102,13 @@ class UserControllerTest {
         dto.setEmail("");
         dto.setStudentNumber("P555257");
 
-        ResponseEntity<?> response = userController.registerUser(dto);
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userController.registerUser(dto)
+        );
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("email"));
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        assertTrue(ex.getReason().toLowerCase().contains("osu"));
     }
 
     @Test
@@ -116,12 +120,13 @@ class UserControllerTest {
         dto.setEmail("praxeo1@gmail.com");
         dto.setStudentNumber("P555258");
 
-        ResponseEntity<?> response = userController.registerUser(dto);
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userController.registerUser(dto)
+        );
 
-        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("osu.cz"));
+        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
+        assertTrue(ex.getReason().toLowerCase().contains("osu.cz"));
     }
 
 
@@ -216,12 +221,13 @@ class UserControllerTest {
         Map<String, String> data = new HashMap<>();
         data.put("email", "neexistuje@osu.cz");
 
-        ResponseEntity<?> response = userController.forgotPassword(data);
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userController.forgotPassword(data)
+        );
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("success") && body.contains("false"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertTrue(ex.getReason().toLowerCase().contains("neexistuje"));
     }
 
     @Test
