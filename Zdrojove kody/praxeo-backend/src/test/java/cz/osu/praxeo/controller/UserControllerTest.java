@@ -42,7 +42,6 @@ class UserControllerTest {
     @Autowired
     private VerificationTokenRepository tokenRepository;
 
-    // ---------- REGISTRACE UŽIVATELE ----------
 
     @Test
     @Order(1)
@@ -125,7 +124,6 @@ class UserControllerTest {
         assertTrue(body.contains("osu.cz"));
     }
 
-    // ---------- COMPLETE REGISTRATION ----------
 
     @Test
     @Order(5)
@@ -187,7 +185,6 @@ class UserControllerTest {
         assertEquals("Neplatný nebo expirovaný token", body.get("message"));
     }
 
-    // ---------- FORGOT PASSWORD ----------
 
     @Test
     @Order(7)
@@ -226,8 +223,6 @@ class UserControllerTest {
         String body = response.getBody().toString().toLowerCase();
         assertTrue(body.contains("success") && body.contains("false"));
     }
-
-    // ---------- RESET PASSWORD ----------
 
     @Test
     @Order(9)
@@ -322,7 +317,6 @@ class UserControllerTest {
         assertTrue(body.contains("expiroval") || body.contains("success=false"));
     }
 
-    // ---------- ROLE BY TOKEN ----------
 
     @Test
     @Order(12)

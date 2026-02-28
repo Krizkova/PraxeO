@@ -11,3 +11,4 @@ dist/
 .env.example
 .env.local
 .env.production
+Zdrojove kody/backend-log.txt

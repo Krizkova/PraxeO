@@ -31,10 +31,6 @@ public class PracticesService {
     public List<PracticesDto> getPracticesByRole() {
 
         User user = userService.getCurrentUser();
-        if (user == null || user.getRole() == null) {
-            // Ochrana pro testovací prostředí – bez přihlášeného uživatele vracíme prázdný seznam.
-            return List.of();
-        }
 
         String role = user.getRole().name();
 
