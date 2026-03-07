@@ -75,3 +75,20 @@ export const createPractice = async (data: {
     const res = await api.post("/practices/create", data);
     return res.data;
 };
+
+export const assignStudent = async (id: number, assign: boolean) => {
+    const res = await api.put(`/practices/${id}/assign-student`, null, {
+        params: { assign }
+    });
+    return res.data;
+};
+
+export const changeStudentState = async (
+    id: number,
+    state: "ACTIVE" | "SUBMITTED"
+) => {
+    const res = await api.put(`/practices/${id}/student-state`, null, {
+        params: { state }
+    });
+    return res.data;
+};

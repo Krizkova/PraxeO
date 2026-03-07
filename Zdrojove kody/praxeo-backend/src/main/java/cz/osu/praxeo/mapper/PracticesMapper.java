@@ -45,6 +45,13 @@ public class PracticesMapper {
                             .collect(Collectors.toList())
             );
         }
+        if (practices.getStudent() != null) {
+            dto.setStudentEmail(practices.getStudent().getEmail());
+        }
+        if (practices.getFounder() != null) {
+            dto.setFounderEmail(practices.getFounder().getEmail());
+        }
+
 
         return dto;
     }

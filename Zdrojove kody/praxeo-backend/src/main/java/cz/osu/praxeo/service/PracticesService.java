@@ -178,4 +178,83 @@ public class PracticesService {
 
         return getPracticeById(practice.getId());
     }
+
+    public PracticesDto assignStudent(Long id, boolean assign) {
+
+        Practices practice = practicesRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
+
+        User currentUser = userService.getCurrentUser();
+
+        if (assign) {
+
+            if (practice.getStudent() != null) {
+                throw new RuntimeException("Praxe je již obsazena");
+            }
+
+            if (practice.getState() != PracticeState.NEW) {
+                throw new RuntimeException("Nelze se přihlásit k této praxi");
+            }
+
+            practice.setStudent(currentUser);
+            practice.setSelectedAt(LocalDateTime.now());
+            practice.setState(PracticeState.ACTIVE);
+
+        } else {
+
+            if (practice.getStudent() == null ||
+                    !practice.getStudent().getId().equals(currentUser.getId())) {
+                throw new RuntimeException("Nemáte přiřazenou tuto praxi");
+            }
+
+            if (practice.getState() != PracticeState.ACTIVE) {
+                throw new RuntimeException("Nelze se odhlásit");
+            }
+
+            practice.setStudent(null);
+            practice.setSelectedAt(null);
+            practice.setState(PracticeState.NEW);
+        }
+
+        practicesRepository.save(practice);
+
+        return getPracticeById(practice.getId());
+    }
+
+    public PracticesDto changeStudentState(Long id, String state) {
+
+        Practices practice = practicesRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
+
+        User currentUser = userService.getCurrentUser();
+
+        boolean isStudent = practice.getStudent() != null &&
+                practice.getStudent().getId().equals(currentUser.getId());
+
+        if (!isStudent) {
+            throw new RuntimeException("Nemáte oprávnění");
+        }
+
+        if ("SUBMITTED".equals(state) && practice.getState() == PracticeState.ACTIVE) {
+
+            if (practice.getStudentEvaluation() == null || practice.getStudentEvaluation().trim().isEmpty()) {
+                throw new RuntimeException("Nejprve musíte vyplnit hodnocení studenta.");
+            }
+
+            practice.setState(PracticeState.SUBMITTED);
+
+        } else if ("ACTIVE".equals(state) && practice.getState() == PracticeState.SUBMITTED) {
+
+            practice.setState(PracticeState.ACTIVE);
+
+        } else {
+            throw new RuntimeException("Neplatná změna stavu");
+        }
+
+        practice.setLastModifiedAt(LocalDateTime.now());
+
+        practicesRepository.save(practice);
+
+        return getPracticeById(practice.getId());
+    }
 }
