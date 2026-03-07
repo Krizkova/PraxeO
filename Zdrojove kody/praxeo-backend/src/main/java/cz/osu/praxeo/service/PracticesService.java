@@ -6,6 +6,7 @@ import cz.osu.praxeo.dto.PracticesDto;
 import cz.osu.praxeo.dto.UserDto;
 import cz.osu.praxeo.entity.PracticeState;
 import cz.osu.praxeo.entity.Practices;
+import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import cz.osu.praxeo.mapper.UserMapper;
@@ -162,6 +163,7 @@ public class PracticesService {
         boolean isFounder = practice.getFounder().getId().equals(currentUser.getId());
         boolean isStudent = practice.getStudent() != null &&
                 practice.getStudent().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         if (isFounder && (practice.getState() == PracticeState.NEW || practice.getState() == PracticeState.ACTIVE)) {
             practice.setName(request.getName());
             practice.setDescription(request.getDescription());
@@ -170,6 +172,33 @@ public class PracticesService {
             practice.setFinalEvaluation(request.getFinalEvaluation());
         } else if (isStudent && practice.getState() == PracticeState.ACTIVE) {
             practice.setStudentEvaluation(request.getStudentEvaluation());
+        } else if (isAdmin) {
+            practice.setName(request.getName());
+            practice.setDescription(request.getDescription());
+            practice.setCompletedAt(request.getCompletedAt());
+            practice.setStudentEvaluation(request.getStudentEvaluation());
+            practice.setFinalEvaluation(request.getFinalEvaluation());
+            practice.setState(PracticeState.valueOf(request.getState()));
+
+            if (request.getFounderEmail() != null && !request.getFounderEmail().isBlank()) {
+                User founder = userService.findByEmail(request.getFounderEmail());
+
+                if (founder == null) {
+                    throw new RuntimeException("Zakladatel s tímto emailem neexistuje");
+                }
+
+                practice.setFounder(founder);
+            }
+
+            if (request.getStudentEmail() != null && !request.getStudentEmail().isBlank()) {
+                User student = userService.findByEmail(request.getStudentEmail());
+
+                if (student == null) {
+                    throw new RuntimeException("Student s tímto emailem neexistuje");
+                }
+
+                practice.setStudent(student);
+            }
         } else {
             throw new RuntimeException("Nemáte oprávnění upravovat tuto praxi");
         }

@@ -44,12 +44,16 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
 
     if (!practice) return null;
 
+    const role = document.cookie
+        .split("; ")
+        .find(row => row.startsWith("userRole="))
+        ?.split("=")[1];
+
     const canEdit =
+        role === "ADMIN" ||
         practice.canEditFounderFields ||
         practice.canEditStudentFields ||
         practice.canEditFinalEvaluation;
-
-
 
     const canUpload = practice.canUploadAttachments;
 

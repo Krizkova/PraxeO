@@ -57,6 +57,9 @@ const PracticeDetailView: React.FC<Props> = ({
     const [completedAt, setCompletedAt] = useState<string | null>(null);
     const [studentEvaluation, setStudentEvaluation] = useState("");
     const [finalEvaluation, setFinalEvaluation] = useState("");
+    const [founderEmail, setFounderEmail] = useState("");
+    const [studentEmail, setStudentEmail] = useState("");
+    const [state, setState] = useState("");
 
     useEffect(() => {
         if (!practice) return;
@@ -65,6 +68,9 @@ const PracticeDetailView: React.FC<Props> = ({
         setCompletedAt(practice.completedAt);
         setStudentEvaluation(practice.studentEvaluation || "");
         setFinalEvaluation(practice.finalEvaluation || "");
+        setFounderEmail(practice.founderEmail || "");
+        setStudentEmail(practice.studentEmail || "");
+        setState(practice.state || "");
     }, [practice]);
 
     if (loading) return <Spinner animation="border" />;
@@ -73,18 +79,24 @@ const PracticeDetailView: React.FC<Props> = ({
     const handleSave = () => {
         const payload: any = {};
 
-        if (canEditFounder) {
+        if (canEditFounder || role === "ADMIN") {
             payload.name = name;
             payload.description = description;
             payload.completedAt = completedAt;
         }
 
-        if (canEditFinalEvaluation) {
+        if (canEditFinalEvaluation || role === "ADMIN") {
             payload.finalEvaluation = finalEvaluation;
         }
 
-        if (canEditStudent) {
+        if (canEditStudent || role === "ADMIN") {
             payload.studentEvaluation = studentEvaluation;
+        }
+
+        if (role === "ADMIN") {
+            payload.founderEmail = founderEmail;
+            payload.studentEmail = studentEmail;
+            payload.state = state;
         }
 
         onUpdate(payload);
@@ -110,7 +122,7 @@ const PracticeDetailView: React.FC<Props> = ({
                 <div style={{ width: "60%" }}>
                     {editMode ? (
                         <>
-                            {canEditFounder && (
+                            {(canEditFounder  || role === "ADMIN") &&(
                                 <>
                                     <Form.Group className="mb-3">
                                         <Form.Label>Název</Form.Label>
@@ -133,18 +145,52 @@ const PracticeDetailView: React.FC<Props> = ({
                                 </>
                             )}
 
-                            {canEditFinalEvaluation && (
+                            {(canEditFinalEvaluation || role === "ADMIN") && (
                                 <Form.Group className="mb-3">
                                     <Form.Label>Finální hodnocení</Form.Label>
                                     <Form.Control as="textarea" rows={5} value={finalEvaluation} onChange={e => setFinalEvaluation(e.target.value)} />
                                 </Form.Group>
                             )}
 
-                            {canEditStudent && (
+                            {(canEditStudent || role === "ADMIN") && (
                                 <Form.Group className="mb-3">
                                     <Form.Label>Moje hodnocení</Form.Label>
                                     <Form.Control as="textarea" rows={4} value={studentEvaluation} onChange={e => setStudentEvaluation(e.target.value)} />
                                 </Form.Group>
+                            )}
+
+                            {role === "ADMIN" && (
+                                <>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Zakladatel praxe</Form.Label>
+                                        <Form.Control
+                                            value={founderEmail}
+                                            onChange={e => setFounderEmail(e.target.value)}
+                                        />
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Student praxe</Form.Label>
+                                        <Form.Control
+                                            value={studentEmail}
+                                            onChange={e => setStudentEmail(e.target.value)}
+                                        />
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Stav praxe</Form.Label>
+                                        <Form.Select
+                                            value={state}
+                                            onChange={e => setState(e.target.value)}
+                                        >
+                                            <option value="NEW">{translatePracticeState("NEW")}</option>
+                                            <option value="ACTIVE">{translatePracticeState("ACTIVE")}</option>
+                                            <option value="SUBMITTED">{translatePracticeState("SUBMITTED")}</option>
+                                            <option value="CANCELED">{translatePracticeState("CANCELED")}</option>
+                                            <option value="COMPLETED">{translatePracticeState("COMPLETED")}</option>
+                                        </Form.Select>
+                                    </Form.Group>
+                                </>
                             )}
 
                             <Button variant="success" onClick={handleSave}>
@@ -188,13 +234,13 @@ const PracticeDetailView: React.FC<Props> = ({
                                     </>
                                 )}
 
-                                {canEditStudent && practice.state === "SUBMITTED" && (
+                                {role === "STUDENT" && practice.state === "SUBMITTED" && (
                                     <Button
                                         variant="secondary"
                                         className="me-2"
                                         onClick={() => onChangeStudentState("ACTIVE")}
                                     >
-                                        Vrátit do aktivní
+                                        Vrátit do aktivního stavu
                                     </Button>
                                 )}
 
