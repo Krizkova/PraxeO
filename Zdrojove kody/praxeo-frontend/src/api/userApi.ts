@@ -1,4 +1,4 @@
-import axios from "axios";
+﻿import axios from "axios";
 import Cookies from "js-cookie";
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -18,12 +18,17 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
+export interface UserResponse {
+    email: string;
+    role: string;
+    firstName?: string;
+    lastName?: string;
+}
 
 export async function loginUser(email: string, password: string) {
     const res = await api.post("/auth/login", { email, password });
     return res.data;
 }
-
 
 export async function registerUser(data: any) {
     const res = await api.post("/users/register-user", data);
@@ -52,12 +57,7 @@ export async function resetPassword(data: any) {
     return res.data;
 }
 
-
 export async function getCurrentUser() {
     const res = await api.get("/users/me");
     return res.data;
 }
-
-
-
-

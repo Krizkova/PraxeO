@@ -7,7 +7,9 @@ import {
     deleteAttachment,
     downloadAttachment,
     updatePractice,
-    changePracticeState
+    changePracticeState,
+    assignStudent,
+    changeStudentState
 } from "../../api/practicesApi";
 import PracticeDetailView from "./PracticeDetailView";
 
@@ -42,7 +44,13 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
 
     if (!practice) return null;
 
+    const role = document.cookie
+        .split("; ")
+        .find(row => row.startsWith("userRole="))
+        ?.split("=")[1];
+
     const canEdit =
+        role === "ADMIN" ||
         practice.canEditFounderFields ||
         practice.canEditStudentFields ||
         practice.canEditFinalEvaluation;
@@ -105,6 +113,26 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             });
     };
 
+    const handleAssignStudent = (assign: boolean) => {
+        assignStudent(practice.id, assign)
+            .then(updated => {
+                setPractice(updated);
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
+    };
+
+    const handleStudentState = (state: "ACTIVE" | "SUBMITTED") => {
+        changeStudentState(practice.id, state)
+            .then(updated => {
+                setPractice(updated);
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            });
+    };
+
     return (
         <PracticeDetailView
             practice={practice}
@@ -124,6 +152,8 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             onDeleteAttachment={handleDeleteAttachment}
             onDownloadAttachment={handleDownloadAttachment}
             onChangeState={handleChangeState}
+            onAssignStudent={handleAssignStudent}
+            onChangeStudentState={handleStudentState}
         />
     );
 };

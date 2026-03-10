@@ -20,6 +20,8 @@ interface Props {
     onDeleteAttachment: (id: number) => void;
     onDownloadAttachment: (id: number, title: string) => void;
     onChangeState: (state: "CANCELED" | "COMPLETED") => void;
+    onAssignStudent: (assign: boolean) => void;
+    onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
 }
 
 const formatDate = (value: string | null) => {
@@ -45,7 +47,9 @@ const PracticeDetailView: React.FC<Props> = ({
                                                  onFileUpload,
                                                  onDeleteAttachment,
                                                  onDownloadAttachment,
-                                                 onChangeState
+                                                 onChangeState,
+                                                 onAssignStudent,
+                                                 onChangeStudentState
                                              }) => {
 
     const [name, setName] = useState("");
@@ -53,6 +57,9 @@ const PracticeDetailView: React.FC<Props> = ({
     const [completedAt, setCompletedAt] = useState<string | null>(null);
     const [studentEvaluation, setStudentEvaluation] = useState("");
     const [finalEvaluation, setFinalEvaluation] = useState("");
+    const [founderEmail, setFounderEmail] = useState("");
+    const [studentEmail, setStudentEmail] = useState("");
+    const [state, setState] = useState("");
 
     useEffect(() => {
         if (!practice) return;
@@ -61,6 +68,9 @@ const PracticeDetailView: React.FC<Props> = ({
         setCompletedAt(practice.completedAt);
         setStudentEvaluation(practice.studentEvaluation || "");
         setFinalEvaluation(practice.finalEvaluation || "");
+        setFounderEmail(practice.founderEmail || "");
+        setStudentEmail(practice.studentEmail || "");
+        setState(practice.state || "");
     }, [practice]);
 
     if (loading) return <Spinner animation="border" />;
@@ -69,18 +79,24 @@ const PracticeDetailView: React.FC<Props> = ({
     const handleSave = () => {
         const payload: any = {};
 
-        if (canEditFounder) {
+        if (canEditFounder || role === "ADMIN") {
             payload.name = name;
             payload.description = description;
             payload.completedAt = completedAt;
         }
 
-        if (canEditFinalEvaluation) {
+        if (canEditFinalEvaluation || role === "ADMIN") {
             payload.finalEvaluation = finalEvaluation;
         }
 
-        if (canEditStudent) {
+        if (canEditStudent || role === "ADMIN") {
             payload.studentEvaluation = studentEvaluation;
+        }
+
+        if (role === "ADMIN") {
+            payload.founderEmail = founderEmail;
+            payload.studentEmail = studentEmail;
+            payload.state = state;
         }
 
         onUpdate(payload);
@@ -92,6 +108,13 @@ const PracticeDetailView: React.FC<Props> = ({
         onFileUpload(file);
     };
 
+    const getCookie = (name: string) => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop()?.split(";").shift();
+    };
+    const role = getCookie("userRole");
+
     return (
         <div>
             <div className="d-flex justify-content-between align-items-start mb-4">
@@ -99,7 +122,7 @@ const PracticeDetailView: React.FC<Props> = ({
                 <div style={{ width: "60%" }}>
                     {editMode ? (
                         <>
-                            {canEditFounder && (
+                            {(canEditFounder  || role === "ADMIN") &&(
                                 <>
                                     <Form.Group className="mb-3">
                                         <Form.Label>Název</Form.Label>
@@ -122,18 +145,52 @@ const PracticeDetailView: React.FC<Props> = ({
                                 </>
                             )}
 
-                            {canEditFinalEvaluation && (
+                            {(canEditFinalEvaluation || role === "ADMIN") && (
                                 <Form.Group className="mb-3">
                                     <Form.Label>Finální hodnocení</Form.Label>
                                     <Form.Control as="textarea" rows={5} value={finalEvaluation} onChange={e => setFinalEvaluation(e.target.value)} />
                                 </Form.Group>
                             )}
 
-                            {canEditStudent && (
+                            {(canEditStudent || role === "ADMIN") && (
                                 <Form.Group className="mb-3">
                                     <Form.Label>Moje hodnocení</Form.Label>
                                     <Form.Control as="textarea" rows={4} value={studentEvaluation} onChange={e => setStudentEvaluation(e.target.value)} />
                                 </Form.Group>
+                            )}
+
+                            {role === "ADMIN" && (
+                                <>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Zakladatel praxe</Form.Label>
+                                        <Form.Control
+                                            value={founderEmail}
+                                            onChange={e => setFounderEmail(e.target.value)}
+                                        />
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Student praxe</Form.Label>
+                                        <Form.Control
+                                            value={studentEmail}
+                                            onChange={e => setStudentEmail(e.target.value)}
+                                        />
+                                    </Form.Group>
+
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Stav praxe</Form.Label>
+                                        <Form.Select
+                                            value={state}
+                                            onChange={e => setState(e.target.value)}
+                                        >
+                                            <option value="NEW">{translatePracticeState("NEW")}</option>
+                                            <option value="ACTIVE">{translatePracticeState("ACTIVE")}</option>
+                                            <option value="SUBMITTED">{translatePracticeState("SUBMITTED")}</option>
+                                            <option value="CANCELED">{translatePracticeState("CANCELED")}</option>
+                                            <option value="COMPLETED">{translatePracticeState("COMPLETED")}</option>
+                                        </Form.Select>
+                                    </Form.Group>
+                                </>
                             )}
 
                             <Button variant="success" onClick={handleSave}>
@@ -142,6 +199,54 @@ const PracticeDetailView: React.FC<Props> = ({
                         </>
                     ) : (
                         <>
+                            <div className="d-flex mb-3">
+
+                                {role === "STUDENT" &&
+                                    !practice.studentEmail &&
+                                    practice.state === "NEW" && (
+                                        <Button
+                                            variant="primary"
+                                            className="me-2"
+                                            onClick={() => onAssignStudent(true)}
+                                        >
+                                            Přihlásit se k praxi
+                                        </Button>
+                                    )}
+
+                                {canEditStudent && practice.state === "ACTIVE" && (
+                                    <>
+                                        <Button
+                                            variant="warning"
+                                            className="me-2"
+                                            onClick={() => onAssignStudent(false)}
+                                        >
+                                            Odhlásit se z praxe
+                                        </Button>
+
+                                        <Button
+                                            variant="success"
+                                            className="me-2"
+                                            disabled={!practice.studentEvaluation || practice.studentEvaluation.trim() === ""}
+                                            onClick={() => onChangeStudentState("SUBMITTED")}
+                                        >
+                                            Odevzdat praxi
+                                        </Button>
+                                    </>
+                                )}
+
+                                {role === "STUDENT" && practice.state === "SUBMITTED" && (
+                                    <Button
+                                        variant="secondary"
+                                        className="me-2"
+                                        onClick={() => onChangeStudentState("ACTIVE")}
+                                    >
+                                        Vrátit do aktivního stavu
+                                    </Button>
+                                )}
+
+                            </div>
+
+
                             <p><strong>Název:</strong> {practice.name}</p>
                             <p><strong>Popis:</strong> {practice.description}</p>
                             <p><strong>Zakladatel:</strong> {practice.founderEmail ?? "—"}</p>
@@ -153,18 +258,39 @@ const PracticeDetailView: React.FC<Props> = ({
                             <p><strong>Finální hodnocení:</strong> {practice.finalEvaluation ?? "—"}</p>
                             <p><strong>Hodnocení studenta:</strong> {practice.studentEvaluation ?? "—"}</p>
 
-                            {canEdit && (
+                            {canEdit && role !== "STUDENT" && practice.state !== "SUBMITTED" && (
                                 <Button variant="outline-success" className="mt-2 me-2" onClick={() => setEditMode(true)}>
                                     Upravit
                                 </Button>
                             )}
 
+                            {canEdit && role === "STUDENT" && practice.state !== "SUBMITTED" && (
+                                <Button variant="outline-success" className="mt-2 me-2" onClick={() => setEditMode(true)}>
+                                    Přidat hodnocení
+                                </Button>
+                            )}
+
+                            {canEdit && practice.state === "SUBMITTED" && (
+                                <Button variant="outline-success" className="mt-2 me-2" onClick={() => setEditMode(true)}>
+                                    Přidat hodnocení
+                                </Button>
+                            )}
+
                             {canChangeState && (
                                 <div className="mt-3">
-                                    <Button variant="danger" className="me-2" onClick={() => onChangeState("CANCELED")}>
+                                    <Button
+                                        variant="danger"
+                                        className="me-2"
+                                        onClick={() => onChangeState("CANCELED")}
+                                    >
                                         Zrušit praxi
                                     </Button>
-                                    <Button variant="success" onClick={() => onChangeState("COMPLETED")}>
+
+                                    <Button
+                                        variant="success"
+                                        disabled={!practice.finalEvaluation || practice.finalEvaluation.trim() === ""}
+                                        onClick={() => onChangeState("COMPLETED")}
+                                    >
                                         Praxe dokončena
                                     </Button>
                                 </div>

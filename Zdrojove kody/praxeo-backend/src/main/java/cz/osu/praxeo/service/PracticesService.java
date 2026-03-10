@@ -6,6 +6,7 @@ import cz.osu.praxeo.dto.PracticesDto;
 import cz.osu.praxeo.dto.UserDto;
 import cz.osu.praxeo.entity.PracticeState;
 import cz.osu.praxeo.entity.Practices;
+import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import cz.osu.praxeo.mapper.UserMapper;
@@ -162,6 +163,7 @@ public class PracticesService {
         boolean isFounder = practice.getFounder().getId().equals(currentUser.getId());
         boolean isStudent = practice.getStudent() != null &&
                 practice.getStudent().getId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRole() == Role.ADMIN;
         if (isFounder && (practice.getState() == PracticeState.NEW || practice.getState() == PracticeState.ACTIVE)) {
             practice.setName(request.getName());
             practice.setDescription(request.getDescription());
@@ -170,10 +172,116 @@ public class PracticesService {
             practice.setFinalEvaluation(request.getFinalEvaluation());
         } else if (isStudent && practice.getState() == PracticeState.ACTIVE) {
             practice.setStudentEvaluation(request.getStudentEvaluation());
+        } else if (isAdmin) {
+            practice.setName(request.getName());
+            practice.setDescription(request.getDescription());
+            practice.setCompletedAt(request.getCompletedAt());
+            practice.setStudentEvaluation(request.getStudentEvaluation());
+            practice.setFinalEvaluation(request.getFinalEvaluation());
+            practice.setState(PracticeState.valueOf(request.getState()));
+
+            if (request.getFounderEmail() != null && !request.getFounderEmail().isBlank()) {
+                User founder = userService.findByEmail(request.getFounderEmail());
+
+                if (founder == null) {
+                    throw new RuntimeException("Zakladatel s tímto emailem neexistuje");
+                }
+
+                practice.setFounder(founder);
+            }
+
+            if (request.getStudentEmail() != null && !request.getStudentEmail().isBlank()) {
+                User student = userService.findByEmail(request.getStudentEmail());
+
+                if (student == null) {
+                    throw new RuntimeException("Student s tímto emailem neexistuje");
+                }
+
+                practice.setStudent(student);
+            }
         } else {
             throw new RuntimeException("Nemáte oprávnění upravovat tuto praxi");
         }
         practice.setLastModifiedAt(LocalDateTime.now());
+        practicesRepository.save(practice);
+
+        return getPracticeById(practice.getId());
+    }
+
+    public PracticesDto assignStudent(Long id, boolean assign) {
+
+        Practices practice = practicesRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
+
+        User currentUser = userService.getCurrentUser();
+
+        if (assign) {
+
+            if (practice.getStudent() != null) {
+                throw new RuntimeException("Praxe je již obsazena");
+            }
+
+            if (practice.getState() != PracticeState.NEW) {
+                throw new RuntimeException("Nelze se přihlásit k této praxi");
+            }
+
+            practice.setStudent(currentUser);
+            practice.setSelectedAt(LocalDateTime.now());
+            practice.setState(PracticeState.ACTIVE);
+
+        } else {
+
+            if (practice.getStudent() == null ||
+                    !practice.getStudent().getId().equals(currentUser.getId())) {
+                throw new RuntimeException("Nemáte přiřazenou tuto praxi");
+            }
+
+            if (practice.getState() != PracticeState.ACTIVE) {
+                throw new RuntimeException("Nelze se odhlásit");
+            }
+
+            practice.setStudent(null);
+            practice.setSelectedAt(null);
+            practice.setState(PracticeState.NEW);
+        }
+
+        practicesRepository.save(practice);
+
+        return getPracticeById(practice.getId());
+    }
+
+    public PracticesDto changeStudentState(Long id, String state) {
+
+        Practices practice = practicesRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
+
+        User currentUser = userService.getCurrentUser();
+
+        boolean isStudent = practice.getStudent() != null &&
+                practice.getStudent().getId().equals(currentUser.getId());
+
+        if (!isStudent) {
+            throw new RuntimeException("Nemáte oprávnění");
+        }
+
+        if ("SUBMITTED".equals(state) && practice.getState() == PracticeState.ACTIVE) {
+
+            if (practice.getStudentEvaluation() == null || practice.getStudentEvaluation().trim().isEmpty()) {
+                throw new RuntimeException("Nejprve musíte vyplnit hodnocení studenta.");
+            }
+
+            practice.setState(PracticeState.SUBMITTED);
+
+        } else if ("ACTIVE".equals(state) && practice.getState() == PracticeState.SUBMITTED) {
+
+            practice.setState(PracticeState.ACTIVE);
+
+        } else {
+            throw new RuntimeException("Neplatná změna stavu");
+        }
+
+        practice.setLastModifiedAt(LocalDateTime.now());
+
         practicesRepository.save(practice);
 
         return getPracticeById(practice.getId());

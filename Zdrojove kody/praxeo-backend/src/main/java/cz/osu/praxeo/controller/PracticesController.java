@@ -60,4 +60,20 @@ public class PracticesController {
     ) {
         return ResponseEntity.ok(practicesService.changePracticeState(id, state));
     }
+
+    @PutMapping("/{id}/assign-student")
+    public ResponseEntity<?> assignStudent(
+            @PathVariable Long id,
+            @RequestParam boolean assign
+    ) {
+        return ResponseEntity.ok(practicesService.assignStudent(id, assign));
+    }
+
+    @PutMapping("/{id}/student-state")
+    public ResponseEntity<?> changeStudentState(
+            @PathVariable Long id,
+            @RequestParam String state
+    ) {
+        return ResponseEntity.ok(practicesService.changeStudentState(id, state));
+    }
 }
