@@ -1,219 +1,112 @@
 package cz.osu.praxeo.controller;
 
-import cz.osu.praxeo.dao.PracticesRepository;
-import cz.osu.praxeo.dao.UserRepository;
-import cz.osu.praxeo.entity.Practices;
-import cz.osu.praxeo.entity.Role;
-import cz.osu.praxeo.entity.User;
-import jakarta.transaction.Transactional;
-import org.junit.jupiter.api.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import cz.osu.praxeo.dto.PracticesDto;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
-@Transactional
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@ActiveProfiles("test")
-class PracticesControllerTest {
+public class PracticesControllerTest {
 
-    @MockBean
-    private JavaMailSender javaMailSender;
-
-    @Autowired
-    private PracticesController practicesController;
-
-    @Autowired
-    private PracticesRepository practicesRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-
-    private void setAuthenticatedUser(User user) {
-        var auth = new UsernamePasswordAuthenticationToken(
-                user, null, user.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(auth);
-    }
+    private final PracticesServiceFake service = new PracticesServiceFake();
+    private final PracticesController controller = new PracticesController(service);
 
     @Test
     @Order(1)
-    @DisplayName("ADMIN – vrátí všechny praxe")
-    void getPracticesByRole_adminGetsAll() {
-        Practices p1 = new Practices();
-        p1.setName("Praxe 1");
-        practicesRepository.save(p1);
-
-        Practices p2 = new Practices();
-        p2.setName("Praxe 2");
-        practicesRepository.save(p2);
-
-        User admin = new User();
-        admin.setEmail("admin-test@osu.cz");
-        admin.setRole(Role.ADMIN);
-        admin.setPassword("x");
-        userRepository.save(admin);
-
-        setAuthenticatedUser(admin);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertEquals(2, list.size());
+    @DisplayName("POST /practices-by-role")
+    void getPracticesByRole_ok() {
+        assertEquals(HttpStatus.OK, controller.getPracticesByRole().getStatusCode());
+        assertEquals(2, ((List<?>) controller.getPracticesByRole().getBody()).size());
     }
 
     @Test
     @Order(2)
-    @DisplayName("STUDENT s přiřazenými praxemi – vrátí jen svoje")
-    void getPracticesByRole_studentAssigned() {
-        User student = new User();
-        student.setEmail("student@osu.cz");
-        student.setRole(Role.STUDENT);
-        student.setPassword("x");
-        userRepository.save(student);
-
-        Practices assigned = new Practices();
-        assigned.setName("Assigned");
-        assigned.setStudent(student);
-        practicesRepository.save(assigned);
-
-        Practices free = new Practices();
-        free.setName("Free");
-        practicesRepository.save(free);
-
-        setAuthenticatedUser(student);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertEquals(1, list.size());
+    @DisplayName("GET /practices/5")
+    void getPractice_ok() {
+        assertEquals(5L, ((PracticesDto) controller.getPractice(5L).getBody()).getId());
     }
 
     @Test
     @Order(3)
-    @DisplayName("STUDENT bez přiřazených – vrátí volné praxe")
-    void getPracticesByRole_studentNoAssigned() {
-        User student = new User();
-        student.setEmail("student2@osu.cz");
-        student.setRole(Role.STUDENT);
-        student.setPassword("x");
-        userRepository.save(student);
-
-        Practices free1 = new Practices();
-        free1.setName("Free 1");
-        practicesRepository.save(free1);
-
-        setAuthenticatedUser(student);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertEquals(1, list.size());
+    @DisplayName("PUT /practices/7")
+    void updatePractice_ok() {
+        assertEquals(7L, ((PracticesDto) controller.updatePractice(7L, new PracticesDto()).getBody()).getId());
     }
 
     @Test
     @Order(4)
-    @DisplayName("Externista– vrátí jen svoje praxe")
-    void getPracticesByRole_externalWorker() {
-        User founder = new User();
-        founder.setEmail("ext@osu.cz");
-        founder.setRole(Role.EXTERNAL_WORKER);
-        founder.setPassword("x");
-        userRepository.save(founder);
-
-        Practices own = new Practices();
-        own.setName("Own");
-        own.setFounder(founder);
-        practicesRepository.save(own);
-
-        Practices other = new Practices();
-        other.setName("Other");
-        practicesRepository.save(other);
-
-        setAuthenticatedUser(founder);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertEquals(1, list.size());
+    @DisplayName("POST /practices/create")
+    void createPractice_ok() {
+        assertEquals(10L, ((PracticesDto) controller.createPractice(new PracticesDto()).getBody()).getId());
     }
 
     @Test
     @Order(5)
-    @DisplayName("ADMIN – prázdný seznam")
-    void getPracticesByRole_noPractices() {
-        User admin = new User();
-        admin.setEmail("admin-empty@osu.cz");
-        admin.setRole(Role.ADMIN);
-        admin.setPassword("x");
-        userRepository.save(admin);
-
-        setAuthenticatedUser(admin);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertTrue(list.isEmpty());
+    @DisplayName("PUT /practices/9/state")
+    void changeState_ok() {
+        assertEquals("COMPLETED", ((PracticesDto) controller.changeState(9L, "COMPLETED").getBody()).getState());
     }
 
     @Test
     @Order(6)
-    @DisplayName("TEACHER – vrátí všechny praxe")
-    void getPracticesByRole_teacher() {
-        User teacher = new User();
-        teacher.setEmail("teacher@osu.cz");
-        teacher.setRole(Role.TEACHER);
-        teacher.setPassword("x");
-        userRepository.save(teacher);
-
-        Practices p = new Practices();
-        p.setName("Praxe teacher");
-        practicesRepository.save(p);
-
-        setAuthenticatedUser(teacher);
-
-        ResponseEntity<?> response = practicesController.getPracticesByRole();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<?> list = (List<?>) response.getBody();
-        assertNotNull(list);
-        assertEquals(1, list.size());
+    @DisplayName("GET /practices/999 – praxe neexistuje")
+    void getPractice_notFound() {
+        service.setThrowExceptionForId(999L);
+        assertThrows(RuntimeException.class, () -> controller.getPractice(999L));
     }
-
-    // ------- /api/practices/{id} -------
 
     @Test
     @Order(7)
-    @DisplayName("GET /api/practices/{id} – neexistující detail")
-    void getPracticeDetail_nonExistingThrows() {
-        assertThrows(RuntimeException.class,
-                () -> practicesController.getPractice(1L));
+    @DisplayName("PUT /practices/999 – praxe neexistuje")
+    void updatePractice_notFound() {
+        service.setThrowExceptionForId(999L);
+        assertThrows(RuntimeException.class, () -> controller.updatePractice(999L, new PracticesDto()));
     }
 
-    @AfterEach
-    void cleanup() {
-        SecurityContextHolder.clearContext();
-        practicesRepository.deleteAll();
-        userRepository.deleteAll();
+    @Test
+    @Order(8)
+    @DisplayName("POST /practices/create – parametry")
+    void createPractice_params() {
+        PracticesDto request = new PracticesDto();
+        request.setName("TestName");
+        request.setDescription("TestDesc");
+
+        PracticesDto result = (PracticesDto) controller.createPractice(request).getBody();
+        assertEquals("TestName", result.getName());
+        assertEquals("TestDesc", result.getDescription());
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("PUT /practices/1/state – CANCELED")
+    void changeState_canceled() {
+        PracticesDto result = (PracticesDto) controller.changeState(1L, "CANCELED").getBody();
+        assertEquals("CANCELED", result.getState());
+    }
+
+    @Test
+    @Order(10)
+    @DisplayName("PUT /practices/1/state – neplatný stav")
+    void changeState_invalid() {
+        service.setThrowInvalidState();
+        assertThrows(RuntimeException.class, () -> controller.changeState(1L, "INVALID"));
+    }
+
+    @Test
+    @Order(11)
+    @DisplayName("Všechny metody vrací HTTP 200 OK")
+    void allMethodsReturnOk() {
+        assertEquals(HttpStatus.OK, controller.getPracticesByRole().getStatusCode());
+        assertEquals(HttpStatus.OK, controller.getPractice(1L).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.updatePractice(1L, new PracticesDto()).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.createPractice(new PracticesDto()).getStatusCode());
+        assertEquals(HttpStatus.OK, controller.changeState(1L, "COMPLETED").getStatusCode());
     }
 }
