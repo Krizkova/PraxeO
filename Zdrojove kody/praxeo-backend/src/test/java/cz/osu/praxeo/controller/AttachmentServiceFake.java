@@ -4,6 +4,7 @@ import cz.osu.praxeo.dto.AttachmentDto;
 import cz.osu.praxeo.entity.Attachment;
 import cz.osu.praxeo.service.AttachmentService;
 import org.springframework.web.multipart.MultipartFile;
+import java.nio.charset.StandardCharsets;
 
 import java.io.IOException;
 import java.util.List;
@@ -28,6 +29,12 @@ class AttachmentServiceFake extends AttachmentService {
         return List.of(new AttachmentDto(1L, "file.txt", "/fake/url",
                 "text/plain", 10L, 5L));
     }
+
+    @Override
+    public byte[] getFileData(Long id) {
+        return "data".getBytes(StandardCharsets.UTF_8);
+    }
+
 
     @Override
     public boolean deleteAttachment(Long id) {
