@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Spinner, Alert, Button, Form } from "react-bootstrap";
 import { translatePracticeState } from "../../utils/practiceState";
+import Task from "../tasks/Task";
+
 
 interface Props {
     practice: any;
@@ -275,6 +277,13 @@ const PracticeDetailView: React.FC<Props> = ({
                                     Přidat hodnocení
                                 </Button>
                             )}
+
+                            <div className="mt-3">
+                                <Task
+                                    practiceId={practice.id}
+                                    allowCreate={practice.state === "NEW" || practice.state === "ACTIVE"}
+                                />
+                            </div>
 
                             {canChangeState && (
                                 <div className="mt-3">
