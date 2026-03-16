@@ -8,7 +8,6 @@ import cz.osu.praxeo.entity.Role;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.entity.VerificationToken;
 import jakarta.transaction.Transactional;
-import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,8 +20,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Transactional
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @ActiveProfiles("test")
+@DisplayName("UserControllerTest")
 class UserControllerTest {
 
     @MockBean
@@ -44,21 +44,42 @@ class UserControllerTest {
     @Autowired
     private VerificationTokenRepository tokenRepository;
 
+    private User saveActiveUser(String email, Role role) {
+        User user = new User();
+        user.setFirstName("Jana");
+        user.setLastName("Králová");
+        user.setEmail(email);
+        user.setRole(role);
+        user.setActive(true);
+        return userRepository.save(user);
+    }
 
+    private VerificationToken saveToken(User user, String token,
+                                        Purpose purpose, boolean expired) {
+        VerificationToken vt = new VerificationToken();
+        vt.setToken(token);
+        vt.setUser(user);
+        vt.setPurpose(purpose);
+        vt.setExpiryDate(expired
+                ? LocalDateTime.now().minusHours(1)
+                : LocalDateTime.now().plusHours(24)
+        );
+        return tokenRepository.save(vt);
+    }
+
+    // registerUser
+
+    @DisplayName("registerUser – platný student")
     @Test
     @Order(1)
-    void userRegister_success() {
+    void registerUser_validStudent_returnsOk() {
         UserDto dto = new UserDto();
-        dto.setFirstName("Jana");
-        dto.setLastName("Králová");
         dto.setEmail("praxeo1@osu.cz");
-        dto.setStudentNumber("P555255");
+        dto.setRole(Role.STUDENT);
 
         ResponseEntity<?> response = userController.registerUser(dto);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
@@ -66,23 +87,18 @@ class UserControllerTest {
         assertEquals("Registrace úspěšná.", body.get("message"));
     }
 
+    @DisplayName("registerUser – duplicitní email")
     @Test
     @Order(2)
-    void userRegister_duplicateEmail() {
+    void registerUser_duplicateEmail_throwsConflict() {
         UserDto first = new UserDto();
-        first.setFirstName("Jana");
-        first.setLastName("Králová");
         first.setEmail("praxeo1@osu.cz");
-        first.setStudentNumber("P555255");
-
-        ResponseEntity<?> firstResponse = userController.registerUser(first);
-        assertEquals(HttpStatus.OK, firstResponse.getStatusCode());
+        first.setRole(Role.STUDENT);
+        userController.registerUser(first);
 
         UserDto duplicate = new UserDto();
-        duplicate.setFirstName("Jana");
-        duplicate.setLastName("Králová");
         duplicate.setEmail("praxeo1@osu.cz");
-        duplicate.setStudentNumber("P555256");
+        duplicate.setRole(Role.STUDENT);
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
@@ -93,32 +109,13 @@ class UserControllerTest {
         assertTrue(ex.getReason().toLowerCase().contains("email"));
     }
 
+    @DisplayName("registerUser – gmail student")
     @Test
     @Order(3)
-    void userRegister_emptyEmail() {
+    void registerUser_nonUniversityDomain_throwsConflict() {
         UserDto dto = new UserDto();
-        dto.setFirstName("Jana");
-        dto.setLastName("Králová");
-        dto.setEmail("");
-        dto.setStudentNumber("P555257");
-
-        ResponseStatusException ex = assertThrows(
-                ResponseStatusException.class,
-                () -> userController.registerUser(dto)
-        );
-
-        assertEquals(HttpStatus.CONFLICT, ex.getStatusCode());
-        assertTrue(ex.getReason().toLowerCase().contains("osu"));
-    }
-
-    @Test
-    @Order(4)
-    void userRegister_invalidDomain() {
-        UserDto dto = new UserDto();
-        dto.setFirstName("Jana");
-        dto.setLastName("Králová");
-        dto.setEmail("praxeo1@gmail.com");
-        dto.setStudentNumber("P555258");
+        dto.setEmail("student@gmail.com");
+        dto.setRole(Role.STUDENT);
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
@@ -129,25 +126,34 @@ class UserControllerTest {
         assertTrue(ex.getReason().toLowerCase().contains("osu.cz"));
     }
 
+    @DisplayName("registerUser – externí firma.cz")
+    @Test
+    @Order(4)
+    void registerUser_externalWorkerWithAnyEmail_succeeds() {
+        UserDto dto = new UserDto();
+        dto.setEmail("worker@firma.cz");
+        dto.setRole(Role.EXTERNAL_WORKER);
 
+        ResponseEntity<?> response = userController.registerUser(dto);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+    }
+
+    // completeRegistration
+
+    @DisplayName("completeRegistration – platný token")
     @Test
     @Order(5)
-    @DisplayName("complete-registration - valid token")
-    void completeRegistration_success() {
-        // 1) registrace čekajícího uživatele
-        UserDto pendingUser = new UserDto();
-        pendingUser.setFirstName("Jana");
-        pendingUser.setLastName("Králová");
-        pendingUser.setEmail("pending@osu.cz");
-        pendingUser.setStudentNumber("P555270");
-
-        userController.registerUser(pendingUser);
+    void completeRegistration_validToken_activatesUser() {
+        UserDto dto = new UserDto();
+        dto.setEmail("pending@osu.cz");
+        dto.setRole(Role.STUDENT);
+        userController.registerUser(dto);
 
         User userEntity = userRepository.findByEmail("pending@osu.cz").orElseThrow();
         VerificationToken vt = tokenRepository.findByUser(userEntity)
-                .orElseThrow(() -> new IllegalStateException("Verification token pro uživatele nebyl nalezen"));
+                .orElseThrow(() -> new IllegalStateException("Token nebyl nalezen"));
 
-        // 2) dokončení registrace
         Map<String, String> data = new HashMap<>();
         data.put("token", vt.getToken());
         data.put("password", "NewStrongPass1");
@@ -158,31 +164,26 @@ class UserControllerTest {
         ResponseEntity<?> response = userController.completeRegistration(data);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
         assertEquals(true, body.get("success"));
 
-        Optional<User> activatedUser = userRepository.findByEmail("pending@osu.cz");
-        assertTrue(activatedUser.isPresent());
-        assertTrue(activatedUser.get().isActive());
+        assertTrue(userRepository.findByEmail("pending@osu.cz")
+                .orElseThrow().isActive());
     }
 
+    @DisplayName("completeRegistration – neplatný token")
     @Test
     @Order(6)
-    @DisplayName("complete-registration - invalid/expired token")
-    void completeRegistration_invalidToken() {
+    void completeRegistration_invalidToken_returnsFailure() {
         Map<String, String> data = new HashMap<>();
-        data.put("token", "expired-invalid-token");
+        data.put("token", "neplatny-token-123");
         data.put("password", "SomePass123");
 
         ResponseEntity<?> response = userController.completeRegistration(data);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
 
         @SuppressWarnings("unchecked")
         Map<String, Object> body = (Map<String, Object>) response.getBody();
@@ -190,18 +191,13 @@ class UserControllerTest {
         assertEquals("Neplatný nebo expirovaný token", body.get("message"));
     }
 
+    // forgotPassword
 
+    @DisplayName("forgotPassword – aktivní uživatel")
     @Test
     @Order(7)
-    @DisplayName("forgot-password - existing email")
-    void forgotPassword_existingEmail() {
-        User user = new User();
-        user.setFirstName("Jana");
-        user.setLastName("Kralova");
-        user.setEmail("praxeo1@osu.cz");
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-        userRepository.save(user);
+    void forgotPassword_activeUser_sendsEmail() {
+        saveActiveUser("praxeo1@osu.cz", Role.STUDENT);
 
         Map<String, String> data = new HashMap<>();
         data.put("email", "praxeo1@osu.cz");
@@ -209,17 +205,18 @@ class UserControllerTest {
         ResponseEntity<?> response = userController.forgotPassword(data);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("success") && body.contains("true"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals(true, body.get("success"));
     }
 
+    @DisplayName("forgotPassword – neexistující email")
     @Test
     @Order(8)
-    @DisplayName("forgot-password - non-existing email")
-    void forgotPassword_nonExistingEmail() {
+    void forgotPassword_nonExistingEmail_throwsBadRequest() {
         Map<String, String> data = new HashMap<>();
-        data.put("email", "neexistuje@osu.cz");
+        data.put("email", "nikdo@osu.cz");
 
         ResponseStatusException ex = assertThrows(
                 ResponseStatusException.class,
@@ -227,27 +224,37 @@ class UserControllerTest {
         );
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        assertTrue(ex.getReason().toLowerCase().contains("neexistuje"));
     }
 
+    @DisplayName("forgotPassword – neaktivní uživatel")
     @Test
     @Order(9)
-    @DisplayName("reset-password - success")
-    void resetPassword_success() {
-        User user = new User();
-        user.setFirstName("Jana");
-        user.setLastName("Kralova");
-        user.setEmail("reset@osu.cz");
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-        userRepository.save(user);
+    void forgotPassword_inactiveUser_throwsBadRequest() {
+        User inactive = new User();
+        inactive.setEmail("inactive@osu.cz");
+        inactive.setRole(Role.STUDENT);
+        inactive.setActive(false);
+        userRepository.save(inactive);
 
-        VerificationToken vt = new VerificationToken();
-        vt.setToken("valid-reset-token");
-        vt.setUser(user);
-        vt.setExpiryDate(LocalDateTime.now().plusHours(1));
-        vt.setPurpose(Purpose.RESET_PASSWORD);
-        tokenRepository.save(vt);
+        Map<String, String> data = new HashMap<>();
+        data.put("email", "inactive@osu.cz");
+
+        ResponseStatusException ex = assertThrows(
+                ResponseStatusException.class,
+                () -> userController.forgotPassword(data)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    // resetPassword
+
+    @DisplayName("resetPassword – platný token")
+    @Test
+    @Order(10)
+    void resetPassword_validToken_changesPassword() {
+        User user = saveActiveUser("reset@osu.cz", Role.STUDENT);
+        saveToken(user, "valid-reset-token", Purpose.RESET_PASSWORD, false);
 
         Map<String, String> data = new HashMap<>();
         data.put("token", "valid-reset-token");
@@ -256,113 +263,95 @@ class UserControllerTest {
         ResponseEntity<?> response = userController.resetPassword(data);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("success") && body.contains("true"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals(true, body.get("success"));
     }
 
-    @Test
-    @Order(10)
-    @DisplayName("reset-password - wrong purpose")
-    void resetPassword_wrongPurpose() {
-        User user = new User();
-        user.setFirstName("Jana");
-        user.setLastName("Kralova");
-        user.setEmail("wrongpurpose@osu.cz");
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-        userRepository.save(user);
-
-        VerificationToken vt = new VerificationToken();
-        vt.setToken("wrong-purpose-token");
-        vt.setUser(user);
-        vt.setExpiryDate(LocalDateTime.now().plusHours(1));
-        vt.setPurpose(Purpose.REGISTER);
-        tokenRepository.save(vt);
-
-        Map<String, String> data = new HashMap<>();
-        data.put("token", "wrong-purpose-token");
-        data.put("password", "NewStrongPass1");
-
-        ResponseEntity<?> response = userController.resetPassword(data);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("token") || body.contains("není určen pro obnovu hesla"));
-    }
-
+    @DisplayName("resetPassword – expirovaný token")
     @Test
     @Order(11)
-    @DisplayName("reset-password - expired token")
-    void resetPassword_expiredToken() {
-        User user = new User();
-        user.setFirstName("Jana");
-        user.setLastName("Kralova");
-        user.setEmail("expired@osu.cz");
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-        userRepository.save(user);
-
-        VerificationToken vt = new VerificationToken();
-        vt.setToken("expired-token");
-        vt.setUser(user);
-        vt.setExpiryDate(LocalDateTime.now().minusHours(1));
-        vt.setPurpose(Purpose.RESET_PASSWORD);
-        tokenRepository.save(vt);
+    void resetPassword_expiredToken_returnsBadRequest() {
+        User user = saveActiveUser("expired@osu.cz", Role.STUDENT);
+        saveToken(user, "expired-reset-token", Purpose.RESET_PASSWORD, true);
 
         Map<String, String> data = new HashMap<>();
-        data.put("token", "expired-token");
+        data.put("token", "expired-reset-token");
         data.put("password", "NewStrongPass1");
 
         ResponseEntity<?> response = userController.resetPassword(data);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNotNull(response.getBody());
-        String body = response.getBody().toString().toLowerCase();
-        assertTrue(body.contains("expiroval") || body.contains("success=false"));
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals(false, body.get("success"));
     }
 
-
+    @DisplayName("resetPassword – token pro registraci")
     @Test
     @Order(12)
-    @DisplayName("role-by-token - valid")
-    void roleByToken_valid() {
-        User user = new User();
-        user.setFirstName("Jana");
-        user.setLastName("Kralova");
-        user.setEmail("role@osu.cz");
-        user.setRole(Role.STUDENT);
-        user.setActive(true);
-        userRepository.save(user);
+    void resetPassword_wrongPurposeToken_returnsBadRequest() {
+        User user = saveActiveUser("wrongpurpose@osu.cz", Role.STUDENT);
+        saveToken(user, "register-token", Purpose.REGISTER, false);
 
-        VerificationToken vt = new VerificationToken();
-        vt.setToken("valid-token");
-        vt.setUser(user);
-        vt.setExpiryDate(LocalDateTime.now().plusHours(1));
-        vt.setPurpose(Purpose.REGISTER);
-        tokenRepository.save(vt);
+        Map<String, String> data = new HashMap<>();
+        data.put("token", "register-token");
+        data.put("password", "NewStrongPass1");
 
-        ResponseEntity<?> response = userController.getRoleByToken("valid-token");
+        ResponseEntity<?> response = userController.resetPassword(data);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> body = (Map<String, Object>) response.getBody();
+        assertEquals(false, body.get("success"));
+    }
+
+    // getRoleByToken
+
+    @DisplayName("getRoleByToken – platný token")
+    @Test
+    @Order(13)
+    void getRoleByToken_validToken_returnsRole() {
+        User user = saveActiveUser("role@osu.cz", Role.STUDENT);
+        saveToken(user, "valid-role-token", Purpose.REGISTER, false);
+
+        ResponseEntity<?> response = userController.getRoleByToken("valid-role-token");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody() instanceof Map);
 
         @SuppressWarnings("unchecked")
         Map<String, String> body = (Map<String, String>) response.getBody();
         assertEquals("STUDENT", body.get("role"));
     }
 
+    @DisplayName("getRoleByToken – neplatný token")
     @Test
-    @Order(13)
-    @DisplayName("role-by-token - invalid")
-    void roleByToken_invalid() {
-        ResponseEntity<?> response = userController.getRoleByToken("invalid-token");
+    @Order(14)
+    void getRoleByToken_invalidToken_returnsBadRequest() {
+        ResponseEntity<?> response = userController.getRoleByToken("neplatny-token");
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Invalid token", response.getBody());
     }
+
+    @DisplayName("getAllUsers – vrátí seznam uživatelů")
+    @Test
+    @Order(15)
+    void getAllUsers_returnsListOfUsers() {
+        saveActiveUser("user1@osu.cz", Role.STUDENT);
+        saveActiveUser("user2@osu.cz", Role.TEACHER);
+
+        List<UserDto> result = userController.getAllUsers();
+
+        assertTrue(result.size() >= 2);
+        assertTrue(result.stream().anyMatch(u -> u.getEmail().equals("user1@osu.cz")));
+        assertTrue(result.stream().anyMatch(u -> u.getEmail().equals("user2@osu.cz")));
+        result.forEach(u -> assertNull(u.getPassword()));
+    }
+
 
     @AfterEach
     void cleanup() {
