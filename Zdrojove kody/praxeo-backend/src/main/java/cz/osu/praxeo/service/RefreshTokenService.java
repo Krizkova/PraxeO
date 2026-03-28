@@ -30,7 +30,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Neplatný refresh token"));
 
-        refreshToken.getUser().getEmail();
+       // TODO prokontrolovat refreshtokenservice refreshToken.getUser().getEmail();
 
         if (refreshToken.isRevoked() || refreshToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("Refresh token je neplatný nebo expirovaný");

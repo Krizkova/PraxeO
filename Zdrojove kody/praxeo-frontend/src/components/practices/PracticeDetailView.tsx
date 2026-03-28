@@ -236,18 +236,34 @@ const PracticeDetailView: React.FC<Props> = ({
                                     </>
                                 )}
 
-                                {role === "STUDENT" && practice.state === "SUBMITTED" && (
-                                    <Button
-                                        variant="secondary"
-                                        className="me-2"
-                                        onClick={() => onChangeStudentState("ACTIVE")}
-                                    >
-                                        Vrátit do aktivního stavu
-                                    </Button>
-                                )}
+                                {role === "STUDENT" &&
+                                    practice.state === "SUBMITTED" &&
+                                    (!practice.finalEvaluation || practice.finalEvaluation.trim() === "") && (
+                                        <Button
+                                            variant="secondary"
+                                            className="me-2"
+                                            disabled={practice.finalEvaluation && practice.finalEvaluation.trim() !== ""}
+                                            onClick={() => onChangeStudentState("ACTIVE")}
+                                        >
+                                            Vrátit do aktivního stavu
+                                        </Button>
+                                    )}
 
                             </div>
 
+
+
+                            {(canEditFounder || role === "ADMIN") && practice.state !== "SUBMITTED" && (
+                                <div className="mb-2">
+                                    <span
+                                        style={{ cursor: "pointer", fontSize: "1.5rem" }}
+                                        onClick={() => setEditMode(true)}
+                                        title="Upravit praxi"
+                                    >
+                                        ✏️
+                                    </span>
+                                </div>
+                            )}
 
                             <p><strong>Název:</strong> {practice.name}</p>
                             <p><strong>Popis:</strong> {practice.description}</p>
@@ -257,26 +273,31 @@ const PracticeDetailView: React.FC<Props> = ({
                             <p><strong>Vybráno:</strong> {formatDate(practice.selectedAt)}</p>
                             <p><strong>Datum dokončení:</strong> {formatDate(practice.completedAt)}</p>
                             <p><strong>Stav:</strong> {translatePracticeState(practice.state)}</p>
-                            <p><strong>Finální hodnocení:</strong> {practice.finalEvaluation ?? "—"}</p>
-                            <p><strong>Hodnocení studenta:</strong> {practice.studentEvaluation ?? "—"}</p>
+                            <p>
+                                <strong>Finální hodnocení:</strong> {practice.finalEvaluation ?? "—"}
+                                {(canEditFinalEvaluation || role === "ADMIN") && (
+                                    <span
+                                        style={{ cursor: "pointer", marginLeft: "8px" }}
+                                        onClick={() => setEditMode(true)}
+                                        title={practice.finalEvaluation ? "Upravit" : "Přidat hodnocení"}
+                                    >
+                                        ✏️
+                                    </span>
+                                )}
+                            </p>
+                            <p>
+                                <strong>Hodnocení studenta:</strong> {practice.studentEvaluation ?? "—"}
+                                {(canEditStudent || role === "ADMIN") && (
+                                    <span
+                                        style={{ cursor: "pointer", marginLeft: "8px" }}
+                                        onClick={() => setEditMode(true)}
+                                        title={practice.studentEvaluation ? "Upravit" : "Přidat hodnocení"}
+                                    >
+                                        ✏️
+                                    </span>
+                                )}
+                            </p>
 
-                            {canEdit && role !== "STUDENT" && practice.state !== "SUBMITTED" && (
-                                <Button variant="outline-success" className="mt-2 me-2" onClick={() => setEditMode(true)}>
-                                    Upravit
-                                </Button>
-                            )}
-
-                            {canEdit && role === "STUDENT" && practice.state !== "SUBMITTED" && (
-                                <Button variant="outline-success" className="mt-2 me-2" onClick={() => setEditMode(true)}>
-                                    Přidat hodnocení
-                                </Button>
-                            )}
-
-                            {canEdit && practice.state === "SUBMITTED" && (
-                                <Button variant="outline-success" className="mt-2 me-2" onClick={() => setEditMode(true)}>
-                                    Přidat hodnocení
-                                </Button>
-                            )}
 
                             <div className="mt-3">
                                 <Task

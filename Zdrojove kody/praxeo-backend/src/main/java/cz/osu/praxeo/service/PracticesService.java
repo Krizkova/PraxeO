@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -40,11 +42,27 @@ public class PracticesService {
                 list = practicesRepository.findAll();
                 break;
             case "STUDENT":
-                List<Practices> assigned = practicesRepository.findByStudent(user);
-                if (!assigned.isEmpty()) {
-                    list = assigned;
+                // 1. Najít všechny praxe, kde je tento uživatel studentem
+                List<Practices> studentPractices = practicesRepository.findByStudent(user);
+
+                // 2. Zjistit, zda má student nějakou aktivní (nedokončenou) praxi
+                boolean hasActive = studentPractices.stream()
+                        .anyMatch(p -> p.getState() != PracticeState.COMPLETED && p.getState() != PracticeState.CANCELED);
+
+                if (hasActive) {
+                    // Pokud má aktivní praxi, vidí jen své praxe (včetně historie)
+                    list = studentPractices;
                 } else {
-                    list = practicesRepository.findByStudentIsNull();
+                    // Pokud nemá aktivní praxi, vidí své praxe + pouze ty volné, které jsou ve stavu NEW
+                    list = new ArrayList<>();
+                    list.addAll(studentPractices);
+
+                    // Přidáme pouze praxe bez studenta, které jsou ve stavu NEW
+                    List<Practices> availablePractices = practicesRepository.findByStudentIsNull().stream()
+                            .filter(p -> p.getState() == PracticeState.NEW)
+                            .toList();
+
+                    list.addAll(availablePractices);
                 }
                 break;
             case "EXTERNAL_WORKER":
@@ -180,24 +198,52 @@ public class PracticesService {
             practice.setFinalEvaluation(request.getFinalEvaluation());
             practice.setState(PracticeState.valueOf(request.getState()));
 
-            if (request.getFounderEmail() != null && !request.getFounderEmail().isBlank()) {
-                User founder = userService.findByEmail(request.getFounderEmail());
+            User newFounder = null;
+            User newStudent = null;
 
-                if (founder == null) {
+            if (request.getFounderEmail() != null && !request.getFounderEmail().isBlank()) {
+                newFounder = userService.findByEmail(request.getFounderEmail());
+
+                if (newFounder == null) {
                     throw new RuntimeException("Zakladatel s tímto emailem neexistuje");
                 }
 
-                practice.setFounder(founder);
+                if (newFounder.getRole() != Role.TEACHER && newFounder.getRole() != Role.EXTERNAL_WORKER) {
+                    throw new RuntimeException("Neplatná role zakladatele");
+                }
             }
 
             if (request.getStudentEmail() != null && !request.getStudentEmail().isBlank()) {
-                User student = userService.findByEmail(request.getStudentEmail());
+                newStudent = userService.findByEmail(request.getStudentEmail());
 
-                if (student == null) {
+                if (newStudent == null) {
                     throw new RuntimeException("Student s tímto emailem neexistuje");
                 }
 
-                practice.setStudent(student);
+                if (newStudent.getRole() != Role.STUDENT) {
+                    throw new RuntimeException("Neplatná role studenta");
+                }
+            }
+
+            if (newFounder != null && newStudent != null &&
+                    newFounder.getId().equals(newStudent.getId())) {
+                throw new RuntimeException("Zakladatel a student nemohou být stejná osoba");
+            }
+
+            if (newFounder != null) {
+                practice.setFounder(newFounder);
+            }
+
+            if (request.getStudentEmail() == null || request.getStudentEmail().isBlank()) {
+                practice.setStudent(null);
+                practice.setState(PracticeState.NEW);
+            } else {
+                if (practice.getStudent() == null ||
+                        !practice.getStudent().getId().equals(Objects.requireNonNull(newStudent).getId())) {
+
+                    practice.setStudent(newStudent);
+                    practice.setState(PracticeState.NEW);
+                }
             }
         } else {
             throw new RuntimeException("Nemáte oprávnění upravovat tuto praxi");
@@ -216,6 +262,15 @@ public class PracticesService {
         User currentUser = userService.getCurrentUser();
 
         if (assign) {
+            // --- ZAČÁTEK NOVÉ KONTROLY ---
+            // Ověříme, zda student již nemá jinou praxi, která probíhá (ACTIVE) nebo čeká na schválení (SUBMITTED)
+            boolean hasActivePractice = practicesRepository.findByStudent(currentUser).stream()
+                    .anyMatch(p -> p.getState() == PracticeState.ACTIVE || p.getState() == PracticeState.SUBMITTED);
+
+            if (hasActivePractice) {
+                throw new RuntimeException("Již máte jednu aktivní praxi. Před přihlášením na další musí být ta stávající dokončena.");
+            }
+            // --- KONEC NOVÉ KONTROLY ---
 
             if (practice.getStudent() != null) {
                 throw new RuntimeException("Praxe je již obsazena");
@@ -230,7 +285,7 @@ public class PracticesService {
             practice.setState(PracticeState.ACTIVE);
 
         } else {
-
+            // ... zbytek metody pro odhlášení (unassign) zůstává stejný
             if (practice.getStudent() == null ||
                     !practice.getStudent().getId().equals(currentUser.getId())) {
                 throw new RuntimeException("Nemáte přiřazenou tuto praxi");
@@ -273,6 +328,10 @@ public class PracticesService {
             practice.setState(PracticeState.SUBMITTED);
 
         } else if ("ACTIVE".equals(state) && practice.getState() == PracticeState.SUBMITTED) {
+
+            if (practice.getFinalEvaluation() != null && !practice.getFinalEvaluation().trim().isEmpty()) {
+                throw new RuntimeException("Nelze vrátit praxi – vedoucí již přidal hodnocení.");
+            }
 
             practice.setState(PracticeState.ACTIVE);
 

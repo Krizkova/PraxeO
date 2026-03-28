@@ -34,16 +34,14 @@ public class AuthController {
         User user = userService.findByEmail(loginRequestDto.getEmail());
         if (user == null) {
             return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED)
-                    .body("Uživatel neexistuje");
+                    .status(HttpStatus.UNAUTHORIZED).body("");
         }
         if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Neplatné přihlašovací údaje");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("");
         }
 
         String accessToken = jwtService.generateToken(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
-        UserDto dto = userMapper.toDto(user);
 
         return ResponseEntity.ok(Map.of(
                 "token", accessToken,

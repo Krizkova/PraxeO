@@ -39,7 +39,7 @@ public class Practices {
     @JoinColumn(name = "founder_id")
     private User founder;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "student_id")
     private User student;
 

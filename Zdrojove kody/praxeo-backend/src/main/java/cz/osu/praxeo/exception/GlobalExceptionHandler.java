@@ -68,7 +68,7 @@ public class GlobalExceptionHandler {
                 "timestamp", LocalDateTime.now(),
                 "status", 500,
                 "error", "Internal Server Error",
-                "message", "Nastala neočekávaná chyba."
+                "message", ex.getMessage().isBlank() ? "Nastala neočekávaná chyba.": ex.getMessage()
         ));
     }
 
