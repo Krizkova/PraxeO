@@ -14,7 +14,7 @@ export const useLogin = () => {
         try {
             const userData = await loginUser(email, password);
 
-            Cookies.set("token", userData.token);
+            Cookies.set("token", userData.token, { expires: 1, path: "/" });
             Cookies.set("userEmail", userData.email);
             Cookies.set("userRole", userData.role);
             Cookies.set("userName", userData.firstName || "");
