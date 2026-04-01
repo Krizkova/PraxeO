@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Header from "../../components/header/Header";
 import RegisterUser from "../../components/register/RegisterUser";
 import { getCurrentUser } from "../../api/userApi";
+import Footer from "../../components/footer/Footer";
 
 interface UserResponse {
     id: number;
@@ -19,53 +20,48 @@ const RegisterUserPage: React.FC = () => {
 
     useEffect(() => {
         let mounted = true;
-
         (async () => {
             try {
                 const u = await getCurrentUser();
                 if (!mounted) return;
-
                 const role = (u.role || "").toUpperCase();
-                const isAdminOrTeacher = role === "ADMIN" || role === "TEACHER";
-
-                if (!isAdminOrTeacher) {
+                if (role !== "ADMIN" && role !== "TEACHER") {
                     navigate("/", { replace: true });
                     return;
                 }
-
                 setUser(u);
-            } catch (err) {
+            } catch {
                 navigate("/", { replace: true });
             } finally {
                 if (mounted) setLoading(false);
             }
         })();
-
-        return () => { mounted = false };
+        return () => { mounted = false; };
     }, [navigate]);
 
     if (loading || !user) return null;
 
-    const roleUpper = (user.role || "").toUpperCase();
-    const isAdminOrTeacher = roleUpper === "ADMIN" || roleUpper === "TEACHER";
+    const isAdminOrTeacher = ["ADMIN", "TEACHER"].includes((user.role || "").toUpperCase());
 
     return (
         <>
             <Header />
-            <div className="container mt-4">
-                <button
-                    className="btn btn-outline-success mb-3"
-                    onClick={() => navigate(-1)}
-                >
-                    ← Zpět
-                </button>
-
-                <h2 className="mb-4">Registrace uživatele</h2>
-
-                <RegisterUser
-                    isAdminOrTeacher={isAdminOrTeacher}
-                />
+            <div style={{
+                background: "#F0F4F0",
+                minHeight: "calc(100vh - 56px)",
+                padding: "52px 32px",
+            }}>
+                <div style={{ maxWidth: 1000, margin: "0 auto" }}>
+                    <span
+                        onClick={() => navigate(-1)}
+                        style={{ fontSize: 13, color: "#1F8A4D", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 24 }}
+                    >
+                        ← Zpět
+                    </span>
+                    <RegisterUser isAdminOrTeacher={isAdminOrTeacher} />
+                </div>
             </div>
+            <Footer />
         </>
     );
 };
