@@ -1,8 +1,8 @@
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: left;
 }
 
 .logo {
@@ -39,4 +39,46 @@
 
 .read-the-docs {
   color: #888;
+}
+
+.form-control {
+  background-color: white !important;
+}
+
+.form-control:focus {
+  background-color: white !important;
+  border-color: #1F8A4D !important;
+  box-shadow: 0 0 0 3px rgba(31,138,77,0.1) !important;
+}
+
+input[type="password"] {
+  background-color: white !important;
+}
+
+input[type="password"]:focus {
+  background-color: white !important;
+  border-color: #1F8A4D !important;
+  box-shadow: 0 0 0 3px rgba(31,138,77,0.1) !important;
+}
+
+input {
+  background-color: white !important;
+  border-radius: 12px !important;
+}
+
+input:focus {
+  background-color: white !important;
+  border-color: #1F8A4D !important;
+  box-shadow: 0 0 0 3px rgba(31,138,77,0.1) !important;
+  outline: none !important;
+}
+
+select {
+  background-color: white !important;
+}
+
+select:focus {
+  border-color: #1F8A4D !important;
+  box-shadow: 0 0 0 3px rgba(31,138,77,0.1) !important;
+  outline: none !important;
 }

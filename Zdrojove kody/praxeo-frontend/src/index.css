@@ -68,3 +68,22 @@ button:focus-visible {
   }
 }
 */
+
+.form-control:focus {
+    border-color: #1F8A4D !important;
+    box-shadow: 0 0 0 3px rgba(31,138,77,0.1) !important;
+}
+
+input:not(.form-control) {
+    font-family: inherit;
+}
+
+input:focus, select:focus {
+    border-color: #1F8A4D !important;
+    box-shadow: 0 0 0 3px rgba(31,138,77,0.1) !important;
+    outline: none !important;
+}
+
+input, select {
+    font-family: inherit;
+}

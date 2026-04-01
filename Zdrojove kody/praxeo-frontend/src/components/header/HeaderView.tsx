@@ -1,5 +1,4 @@
 import React from "react";
-import { Navbar, Row, Col, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 
 interface HeaderViewProps {
@@ -13,57 +12,77 @@ const HeaderView: React.FC<HeaderViewProps> = ({ email, role, onLogout, onAddUse
     const navigate = useNavigate();
     const canAddUser = role === "ADMIN" || role === "TEACHER";
 
-    return (
-        <Navbar bg="success" variant="dark" expand="lg" className="shadow-sm py-2">
-            <Row className="w-100 m-0 align-items-center">
-                <Col xs="auto" className="d-flex align-items-center ms-3">
-                    <Navbar.Brand href="/" className="d-flex align-items-center gap-2">
-                        <img
-                            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTenJ6soGRThFsEiLSHM3ljqVMSQdUWkYsY_Q&s"
-                            alt="PraxeO logo"
-                            width="36"
-                            height="36"
-                            className="d-inline-block align-top"
-                        />
-                        <span className="fw-bold fs-4">PraxeO</span>
-                    </Navbar.Brand>
-                </Col>
+    const btnOutline: React.CSSProperties = {
+        background: "transparent",
+        color: "white",
+        border: "1px solid rgba(255,255,255,0.5)",
+        borderRadius: 8,
+        padding: "5px 14px",
+        fontSize: 13,
+        fontWeight: 500,
+        cursor: "pointer",
+    };
 
-                <Col className="d-flex justify-content-end align-items-center me-3">
-                    {email && (
-                        <>
-                            <Button
-                                variant="outline-light"
-                                size="sm"
-                                className="fw-semibold me-3"
-                                onClick={() => navigate("/summary")}
-                            >
-                                Přehled praxí
-                            </Button>
-                            {canAddUser && (
-                                <Button
-                                    variant="light"
-                                    size="sm"
-                                    className="fw-semibold me-3"
-                                    onClick={onAddUser}
-                                >
-                                    Přidat uživatele
-                                </Button>
-                            )}
-                            <span className="text-light me-3 fw-semibold">{email}</span>
-                            <Button
-                                variant="outline-light"
-                                size="sm"
-                                className="fw-semibold"
-                                onClick={onLogout}
-                            >
-                                Odhlásit
-                            </Button>
-                        </>
+    const btnLight: React.CSSProperties = {
+        background: "rgba(255,255,255,0.15)",
+        color: "white",
+        border: "1px solid rgba(255,255,255,0.3)",
+        borderRadius: 8,
+        padding: "5px 14px",
+        fontSize: 13,
+        fontWeight: 500,
+        cursor: "pointer",
+    };
+
+    return (
+        <nav style={{
+            background: "#1F8A4D",
+            height: 56,
+            display: "flex",
+            alignItems: "center",
+            padding: "0 24px",
+            justifyContent: "space-between",
+        }}>
+            <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+                <div style={{
+                    width: 32,
+                    height: 32,
+                    background: "rgba(255,255,255,0.15)",
+                    borderRadius: 8,
+                    border: "1.5px solid rgba(255,255,255,0.4)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                }}>
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white"/>
+                        <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+                        <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
+                        <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white"/>
+                    </svg>
+                </div>
+                <span style={{ color: "white", fontSize: 18, fontWeight: 500 }}>PraxeO</span>
+                <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Ostravská univerzita</span>
+            </a>
+
+            {email && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <button style={btnOutline} onClick={() => navigate("/summary")}>
+                        Přehled praxí
+                    </button>
+                    {canAddUser && (
+                        <button style={btnLight} onClick={onAddUser}>
+                            Přidat uživatele
+                        </button>
                     )}
-                </Col>
-            </Row>
-        </Navbar>
+                    <span style={{ color: "rgba(255,255,255,0.85)", fontSize: 13 }}>{email}</span>
+                    <button style={btnOutline} onClick={onLogout}>
+                        Odhlásit
+                    </button>
+                </div>
+            )}
+        </nav>
     );
 };
 
