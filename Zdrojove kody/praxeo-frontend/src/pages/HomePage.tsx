@@ -30,7 +30,7 @@ const HomePage: React.FC = () => {
                     gap: 64,
                     alignItems: "start",
                 }}>
-                    {/* Левая часть */}
+
                     <div style={{ paddingTop: 8 }}>
                         <div style={{
                             display: "inline-block",
@@ -84,7 +84,7 @@ const HomePage: React.FC = () => {
                             ))}
                         </div>
 
-                        {/* Заметка внизу */}
+
                         <div style={{
                             borderTop: "0.5px solid #D9E2D9",
                             paddingTop: 16,
@@ -108,7 +108,7 @@ const HomePage: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Правая часть — только если не залогинен */}
+
                     {!isLoggedIn && <LoginView />}
                 </div>
             </div>

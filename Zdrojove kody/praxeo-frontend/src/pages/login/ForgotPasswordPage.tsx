@@ -63,7 +63,7 @@ const ForgotPasswordPage: React.FC = () => {
                 </span>
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 420px", gap: 48, alignItems: "start" }}>
-                        {/* Левая часть */}
+
                         <div style={{ paddingTop: 8 }}>
                             <h2 style={{ fontSize: 26, fontWeight: 500, color: "#1E2430", margin: "0 0 12px" }}>Obnovení hesla</h2>
                             <p style={{ fontSize: 15, color: "#667085", lineHeight: 1.7, margin: "0 0 32px" }}>
@@ -88,7 +88,7 @@ const ForgotPasswordPage: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Правая часть — карточка */}
+
                         <div style={{ background: "white", borderRadius: 18, border: "0.5px solid #D9E2D9", padding: 32 }}>
                             {!sent ? (
                                 <>

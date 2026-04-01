@@ -102,7 +102,7 @@ const LoginView: React.FC = () => {
                     />
                 </div>
 
-                {/* Forgot password — под полем пароля справа */}
+                {/* Forgot password */}
                 <div style={{ textAlign: "right", marginBottom: 20 }}>
                     <span
                         onClick={() => navigate("/forgot-password")}
