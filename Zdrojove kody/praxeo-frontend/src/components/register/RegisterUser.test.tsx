@@ -65,7 +65,6 @@ describe("RegisterUser", () => {
 
     it("submits selected role for admin/teacher", async () => {
         vi.mocked(registerUser).mockResolvedValue({});
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -88,15 +87,12 @@ describe("RegisterUser", () => {
             email: "new@osu.cz",
             role: "EXTERNAL_WORKER",
         });
-        expect(alertSpy).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith("/");
-
-        alertSpy.mockRestore();
+        expect(screen.getByText(/pozvánka odeslána|pozvĂˇnka odeslĂˇna/i)).toBeInTheDocument();
+        expect(mockNavigate).not.toHaveBeenCalledWith("/");
     });
 
     it("forces STUDENT role for non-admin submit", async () => {
         vi.mocked(registerUser).mockResolvedValue({});
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -116,9 +112,7 @@ describe("RegisterUser", () => {
             email: "student@osu.cz",
             role: "STUDENT",
         });
-        expect(alertSpy).toHaveBeenCalled();
-        expect(mockNavigate).toHaveBeenCalledWith("/");
-
-        alertSpy.mockRestore();
+        expect(screen.getByText(/zkontrolujte e-mail/i)).toBeInTheDocument();
+        expect(mockNavigate).not.toHaveBeenCalledWith("/");
     });
 });

@@ -25,7 +25,7 @@ describe("CompleteRegistrationView", () => {
             />
         );
 
-        expect(screen.getByPlaceholderText(/studijn/i)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/a24b0001p/i)).toBeInTheDocument();
         expect(screen.queryByPlaceholderText(/název firmy/i)).not.toBeInTheDocument();
     });
 
@@ -72,5 +72,60 @@ describe("CompleteRegistrationView", () => {
         });
 
         expect(screen.getByRole("button")).not.toBeDisabled();
+    });
+
+    it("shows company field for EXTERNAL_WORKER and hides student number", () => {
+        render(
+            <CompleteRegistrationView
+                role="EXTERNAL_WORKER"
+                firstName=""
+                lastName=""
+                studentNumber=""
+                companyName=""
+                password=""
+                agreedToTerms={false}
+                loading={false}
+                setFirstName={vi.fn()}
+                setLastName={vi.fn()}
+                setStudentNumber={vi.fn()}
+                setCompanyName={vi.fn()}
+                setPassword={vi.fn()}
+                setAgreedToTerms={vi.fn()}
+                handleSubmit={vi.fn()}
+            />
+        );
+
+        expect(screen.getByPlaceholderText(/firma/i)).toBeInTheDocument();
+        expect(screen.queryByPlaceholderText(/a24b0001p/i)).not.toBeInTheDocument();
+    });
+
+    it("shows password validation and mismatch messages", () => {
+        render(
+            <CompleteRegistrationView
+                role="STUDENT"
+                firstName="Jan"
+                lastName="Novák"
+                studentNumber="S12345"
+                companyName=""
+                password="abc"
+                agreedToTerms={true}
+                loading={false}
+                setFirstName={vi.fn()}
+                setLastName={vi.fn()}
+                setStudentNumber={vi.fn()}
+                setCompanyName={vi.fn()}
+                setPassword={vi.fn()}
+                setAgreedToTerms={vi.fn()}
+                handleSubmit={vi.fn()}
+            />
+        );
+
+        const passwordInputs = screen.getAllByPlaceholderText("••••••••");
+        fireEvent.change(passwordInputs[1], { target: { value: "different123" } });
+
+        expect(screen.getByText(/8 znak/i)).toBeInTheDocument();
+        expect(screen.getByText(/jedno/i)).toBeInTheDocument();
+        expect(screen.getByText(/neshod/i)).toBeInTheDocument();
+        expect(screen.getByRole("button")).toBeDisabled();
     });
 });

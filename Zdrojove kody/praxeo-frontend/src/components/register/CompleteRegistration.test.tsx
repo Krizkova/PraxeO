@@ -165,4 +165,38 @@ describe("CompleteRegistration", () => {
 
         alertSpy.mockRestore();
     });
+
+    it("shows communication error alert when request throws", async () => {
+        vi.mocked(getRoleByToken).mockResolvedValue({ role: "STUDENT" });
+        vi.mocked(completeRegistration).mockRejectedValue(new Error("network"));
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+        render(
+            <MemoryRouter>
+                <CompleteRegistration />
+            </MemoryRouter>
+        );
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        act(() => {
+            latestProps().setFirstName("Jan");
+            latestProps().setLastName("Novák");
+            latestProps().setPassword("Strong123");
+            latestProps().setStudentNumber("S12345");
+            latestProps().setAgreedToTerms(true);
+        });
+
+        await act(async () => {
+            await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
+        });
+
+        expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("Chyba komunikace"));
+        expect(loginUser).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+
+        alertSpy.mockRestore();
+    });
 });
