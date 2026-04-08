@@ -40,10 +40,10 @@ describe("LoginView", () => {
     it("updates email and password fields", () => {
         render(<LoginView />);
 
-        fireEvent.change(screen.getByLabelText("Email"), {
+        fireEvent.change(screen.getByPlaceholderText("jan.pavel@osu.cz"), {
             target: { value: "student@osu.cz" },
         });
-        fireEvent.change(screen.getByLabelText("Heslo"), {
+        fireEvent.change(screen.getByPlaceholderText("••••••••"), {
             target: { value: "tajneheslo" },
         });
 
@@ -72,10 +72,24 @@ describe("LoginView", () => {
         const user = userEvent.setup();
         render(<LoginView />);
 
-        await user.click(screen.getByText(/zapomněl/i));
+        await user.click(screen.getByText(/zapomenut/i));
         expect(mockNavigate).toHaveBeenCalledWith("/forgot-password");
 
-        await user.click(screen.getByRole("button", { name: /registrovat/i }));
+        await user.click(screen.getByText(/registrovat/i));
         expect(mockNavigate).toHaveBeenCalledWith("/registerStudent");
+    });
+
+    it("applies focus and blur styles on inputs", () => {
+        render(<LoginView />);
+
+        const emailInput = screen.getByPlaceholderText("jan.pavel@osu.cz");
+        const initialBorder = (emailInput as HTMLInputElement).style.border;
+
+        fireEvent.focus(emailInput);
+        expect((emailInput as HTMLInputElement).style.border).not.toBe(initialBorder);
+        expect((emailInput as HTMLInputElement).style.boxShadow).toContain("rgba(31,138,77,0.1)");
+
+        fireEvent.blur(emailInput);
+        expect((emailInput as HTMLInputElement).style.boxShadow).toBe("none");
     });
 });

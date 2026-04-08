@@ -59,7 +59,7 @@ describe("useLogin", () => {
 
         expect(preventDefault).toHaveBeenCalledTimes(1);
         expect(loginUser).toHaveBeenCalledWith("student@osu.cz", "tajneheslo");
-        expect(Cookies.set).toHaveBeenCalledWith("token", "token123");
+        expect(Cookies.set).toHaveBeenCalledWith("token", "token123", { expires: 1, path: "/" });
         expect(Cookies.set).toHaveBeenCalledWith("userEmail", "student@osu.cz");
         expect(Cookies.set).toHaveBeenCalledWith("userRole", "STUDENT");
         expect(Cookies.set).toHaveBeenCalledWith("userName", "Jan");
@@ -86,6 +86,27 @@ describe("useLogin", () => {
         expect(alertSpy).toHaveBeenCalledWith("Neplatné údaje");
         expect(mockNavigate).not.toHaveBeenCalled();
         expect(Cookies.set).not.toHaveBeenCalled();
+
+        alertSpy.mockRestore();
+    });
+
+    it("shows fallback alert message when error has no message", async () => {
+        vi.mocked(loginUser).mockRejectedValue({});
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+        const { result } = renderHook(() => useLogin(), { wrapper });
+
+        act(() => {
+            result.current.setEmail("student@osu.cz");
+            result.current.setPassword("spatneheslo");
+        });
+
+        await act(async () => {
+            await result.current.handleLogin({ preventDefault: vi.fn() } as any);
+        });
+
+        expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("Chyba"));
+        expect(mockNavigate).not.toHaveBeenCalled();
 
         alertSpy.mockRestore();
     });
