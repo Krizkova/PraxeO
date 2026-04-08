@@ -130,4 +130,57 @@ describe("ResetPassword", () => {
 
         alertSpy.mockRestore();
     });
+
+    it("shows alert when auto login fails after successful reset", async () => {
+        vi.mocked(resetPassword).mockResolvedValue({ success: true, email: "student@osu.cz" });
+        vi.mocked(loginUser).mockResolvedValue(undefined as any);
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+        render(
+            <MemoryRouter>
+                <ResetPassword />
+            </MemoryRouter>
+        );
+
+        act(() => {
+            latestProps().setPassword("Strong123");
+            latestProps().setPassword2("Strong123");
+        });
+
+        await act(async () => {
+            await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
+        });
+
+        expect(alertSpy).toHaveBeenCalled();
+        expect(Cookies.set).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+
+        alertSpy.mockRestore();
+    });
+
+    it("shows communication error when reset request throws", async () => {
+        vi.mocked(resetPassword).mockRejectedValue({ response: { data: { message: "Server down" } } });
+        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+
+        render(
+            <MemoryRouter>
+                <ResetPassword />
+            </MemoryRouter>
+        );
+
+        act(() => {
+            latestProps().setPassword("Strong123");
+            latestProps().setPassword2("Strong123");
+        });
+
+        await act(async () => {
+            await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
+        });
+
+        expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("Chyba:"));
+        expect(loginUser).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+
+        alertSpy.mockRestore();
+    });
 });

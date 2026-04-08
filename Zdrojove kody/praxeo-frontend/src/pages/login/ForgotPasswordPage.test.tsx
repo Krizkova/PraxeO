@@ -32,7 +32,6 @@ describe("ForgotPasswordPage", () => {
 
     it("submits email and navigates home on success", async () => {
         vi.mocked(forgotPassword).mockResolvedValue({});
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -40,23 +39,19 @@ describe("ForgotPasswordPage", () => {
             </MemoryRouter>
         );
 
-        fireEvent.change(screen.getByPlaceholderText(/zadejte email/i), {
+        fireEvent.change(screen.getByPlaceholderText(/jan\.pavel@osu\.cz/i), {
             target: { value: "user@osu.cz" },
         });
-        fireEvent.submit(screen.getByRole("button", { name: /obnovit heslo/i }).closest("form") as HTMLFormElement);
+        fireEvent.submit(screen.getByRole("button", { name: /odeslat odkaz/i }).closest("form") as HTMLFormElement);
 
         await waitFor(() => {
             expect(forgotPassword).toHaveBeenCalledWith({ email: "user@osu.cz" });
-            expect(alertSpy).toHaveBeenCalled();
-            expect(mockNavigate).toHaveBeenCalledWith("/");
+            expect(screen.getByText(/zkontrolujte e-mail/i)).toBeInTheDocument();
         });
-
-        alertSpy.mockRestore();
     });
 
-    it("shows error alert when api call fails", async () => {
+    it("shows inline error when api call fails", async () => {
         vi.mocked(forgotPassword).mockRejectedValue(new Error("fail"));
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -64,16 +59,46 @@ describe("ForgotPasswordPage", () => {
             </MemoryRouter>
         );
 
-        fireEvent.change(screen.getByPlaceholderText(/zadejte email/i), {
+        fireEvent.change(screen.getByPlaceholderText(/jan\.pavel@osu\.cz/i), {
             target: { value: "user@osu.cz" },
         });
-        fireEvent.submit(screen.getByRole("button", { name: /obnovit heslo/i }).closest("form") as HTMLFormElement);
+        fireEvent.submit(screen.getByRole("button", { name: /odeslat odkaz/i }).closest("form") as HTMLFormElement);
 
         await waitFor(() => {
-            expect(alertSpy).toHaveBeenCalled();
-            expect(mockNavigate).not.toHaveBeenCalledWith("/");
+            expect(screen.getByText(/neočekávaná chyba|neoÄŤek/iu)).toBeInTheDocument();
+            expect(mockNavigate).not.toHaveBeenCalled();
+        });
+    });
+
+    it("shows not-found message when API says account does not exist", async () => {
+        vi.mocked(forgotPassword).mockRejectedValue({
+            response: { data: { message: "uživatel neexistuje" } },
         });
 
-        alertSpy.mockRestore();
+        render(
+            <MemoryRouter>
+                <ForgotPasswordPage />
+            </MemoryRouter>
+        );
+
+        fireEvent.change(screen.getByPlaceholderText(/jan\.pavel@osu\.cz/i), {
+            target: { value: "missing@osu.cz" },
+        });
+        fireEvent.submit(screen.getByRole("button", { name: /odeslat odkaz/i }).closest("form") as HTMLFormElement);
+
+        await waitFor(() => {
+            expect(screen.getByText(/nalezen|zaregistrujte/i)).toBeInTheDocument();
+        });
+    });
+
+    it("navigates back when back link is clicked", () => {
+        render(
+            <MemoryRouter>
+                <ForgotPasswordPage />
+            </MemoryRouter>
+        );
+
+        fireEvent.click(screen.getByText((text) => text.includes("Zp")));
+        expect(mockNavigate).toHaveBeenCalledWith(-1);
     });
 });
