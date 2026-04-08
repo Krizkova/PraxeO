@@ -66,7 +66,7 @@ describe("PracticeDetailView", () => {
         expect(screen.getByText(/Praxe A/i)).toBeInTheDocument();
         expect(screen.getByText(/Detail popisu/i)).toBeInTheDocument();
 
-        fireEvent.click(screen.getByRole("button", { name: /upravit/i }));
+        fireEvent.click(screen.getByTitle(/upravit praxi/i));
         expect(props.setEditMode).toHaveBeenCalledWith(true);
 
         expect(screen.getByTestId("task-component")).toBeInTheDocument();
