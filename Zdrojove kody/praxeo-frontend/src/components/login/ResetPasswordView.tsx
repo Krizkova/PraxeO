@@ -1,16 +1,24 @@
 import React, { useMemo } from "react";
+import { KeyRound, LockKeyhole, CircleAlert } from "lucide-react";
 
 interface Props {
     password: string;
     password2: string;
     loading: boolean;
+    errorMessage?: string;
     setPassword: (v: string) => void;
     setPassword2: (v: string) => void;
     handleSubmit: (e: React.FormEvent) => void;
 }
 
 const ResetPasswordView: React.FC<Props> = ({
-                                                password, password2, loading, setPassword, setPassword2, handleSubmit
+                                                password,
+                                                password2,
+                                                loading,
+                                                errorMessage,
+                                                setPassword,
+                                                setPassword2,
+                                                handleSubmit,
                                             }) => {
     const validation = useMemo(() => {
         const errors: string[] = [];
@@ -20,87 +28,238 @@ const ResetPasswordView: React.FC<Props> = ({
         return { isValid: errors.length === 0 };
     }, [password, password2]);
 
-    const s = {
-        page: { background: "#F0F4F0", minHeight: "calc(100vh - 56px)", display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "52px 24px" } as React.CSSProperties,
-        card: { width: "100%", maxWidth: 420, background: "white", borderRadius: 18, border: "0.5px solid #D9E2D9", padding: 36 } as React.CSSProperties,
-        label: { fontSize: 12, fontWeight: 500, color: "#1E2430", display: "block", marginBottom: 6 } as React.CSSProperties,
-        input: { width: "100%", height: 48, background: "white", border: "1px solid #D9E2D9", borderRadius: 12, padding: "0 14px", fontSize: 14, color: "#1E2430", outline: "none", boxSizing: "border-box" as const },
-        inputError: { border: "1px solid #e24b4a" } as React.CSSProperties,
-        hint: { fontSize: 11, color: "#A0A9A0", marginTop: 5 } as React.CSSProperties,
-        error: { fontSize: 11, color: "#e24b4a", marginTop: 5 } as React.CSSProperties,
-        btn: { width: "100%", height: 48, background: "#1F8A4D", color: "white", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: "pointer" } as React.CSSProperties,
-        btnDisabled: { opacity: 0.5, cursor: "not-allowed" } as React.CSSProperties,
-    };
+    const passwordInvalid =
+        password.length > 0 && (password.length < 8 || !/\d/.test(password));
 
-    const passwordInvalid = password.length > 0 && (password.length < 8 || !/\d/.test(password));
     const matchInvalid = password2.length > 0 && password !== password2;
+    const isDisabled = !validation.isValid || loading;
 
-    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-        e.target.style.border = "1px solid #1F8A4D";
-        e.target.style.boxShadow = "0 0 0 3px rgba(31,138,77,0.1)";
+    const inputStyle: React.CSSProperties = {
+        width: "100%",
+        height: 48,
+        background: "white",
+        border: "1.5px solid #d0e8d0",
+        borderRadius: 12,
+        padding: "0 14px 0 42px",
+        fontSize: 14,
+        color: "#1a3d1a",
+        outline: "none",
+        boxSizing: "border-box",
+        transition: "all 0.15s",
+        fontFamily: "inherit",
     };
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-        e.target.style.border = passwordInvalid ? "1px solid #e24b4a" : "1px solid #D9E2D9";
+
+    const labelStyle: React.CSSProperties = {
+        fontSize: 12,
+        fontWeight: 600,
+        color: "#3a5a3a",
+        display: "block",
+        marginBottom: 6,
+    };
+
+    const iconBoxStyle: React.CSSProperties = {
+        width: 24,
+        height: 24,
+        background: "#D6EDDF",
+        borderRadius: 8,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+    };
+
+    const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+        e.target.style.border = "1.5px solid #2d7a2d";
+        e.target.style.boxShadow = "0 0 0 3px rgba(45,122,45,0.1)";
+        e.target.style.background = "#fcfffc";
+    };
+
+    const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+        e.target.style.border = "1.5px solid #d0e8d0";
         e.target.style.boxShadow = "none";
+        e.target.style.background = "white";
     };
 
     return (
-        <div style={s.page}>
-            <div style={s.card}>
-                <div style={{ width: 48, height: 48, background: "#D6EDDF", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                        <rect x="4" y="9" width="12" height="9" rx="2" stroke="#1F8A4D" strokeWidth="1.5"/>
-                        <path d="M7 9V6a3 3 0 1 1 6 0v3" stroke="#1F8A4D" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
+        <div
+            style={{
+                width: "100%",
+                maxWidth: 460,
+                background: "white",
+                borderRadius: 18,
+                border: "1px solid #e0ede0",
+                padding: 32,
+                boxShadow: "0 4px 24px rgba(34,85,34,0.08)",
+            }}
+        >
+            {/* Nadpis formuláře */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                <div style={iconBoxStyle}>
+                    <KeyRound size={14} color="#1F8A4D" strokeWidth={2.2} />
                 </div>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: "#1a3d1a", margin: 0 }}>
+                    Nastavte nové heslo
+                </h2>
+            </div>
 
-                <h2 style={{ fontSize: 20, fontWeight: 500, color: "#1E2430", margin: "0 0 4px" }}>Obnovení hesla</h2>
-                <p style={{ fontSize: 13, color: "#667085", margin: "0 0 24px" }}>Nastavte nové heslo pro váš účet</p>
+            <p style={{ fontSize: 13, color: "#6b8f6b", margin: "0 0 28px" }}>
+                Zvolte si bezpečné heslo pro váš účet
+            </p>
 
-                <form onSubmit={handleSubmit}>
-                    <div style={{ marginBottom: 6 }}>
-                        <label style={s.label}>Nové heslo</label>
+            <form onSubmit={handleSubmit}>
+                {/* Nové heslo */}
+                <div style={{ marginBottom: 6 }}>
+                    <label style={labelStyle}>Nové heslo</label>
+                    <div style={{ position: "relative" }}>
+                        <div
+                            style={{
+                                position: "absolute",
+                                left: 12,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                color: passwordInvalid ? "#e24b4a" : "#7FA487",
+                                pointerEvents: "none",
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            <LockKeyhole size={15} />
+                        </div>
+
                         <input
                             type="password"
                             autoComplete="new-password"
-                            style={{ ...s.input, ...(passwordInvalid ? s.inputError : {}) }}
+                            style={{
+                                ...inputStyle,
+                                ...(passwordInvalid ? { border: "1.5px solid #e24b4a" } : {}),
+                            }}
                             placeholder="••••••••"
                             value={password}
-                            onChange={e => setPassword(e.target.value)}
-                            onFocus={handleFocus}
-                            onBlur={handleBlur}
+                            onChange={(e) => setPassword(e.target.value)}
+                            onFocus={onFocus}
+                            onBlur={onBlur}
                             required
+                            aria-invalid={passwordInvalid}
+                            aria-describedby={
+                                passwordInvalid ? "password-rules-error" : "password-rules-help"
+                            }
                         />
                     </div>
-                    {password.length > 0 && password.length < 8 && <p style={s.error}>Heslo musí mít alespoň 8 znaků.</p>}
-                    {password.length > 0 && !/\d/.test(password) && <p style={s.error}>Heslo musí obsahovat alespoň jedno číslo.</p>}
-                    {!passwordInvalid && <p style={s.hint}>Minimálně 8 znaků a jedno číslo</p>}
+                </div>
 
-                    <div style={{ marginBottom: 28, marginTop: 12 }}>
-                        <label style={s.label}>Potvrzení hesla</label>
+                {password.length > 0 && password.length < 8 && (
+                    <p id="password-rules-error" style={{ fontSize: 11, color: "#e24b4a", marginTop: 4 }}>
+                        Heslo musí mít alespoň 8 znaků.
+                    </p>
+                )}
+
+                {password.length > 0 && !/\d/.test(password) && (
+                    <p style={{ fontSize: 11, color: "#e24b4a", marginTop: 4 }}>
+                        Heslo musí obsahovat alespoň jedno číslo.
+                    </p>
+                )}
+
+                {!passwordInvalid && (
+                    <p id="password-rules-help" style={{ fontSize: 11, color: "#a0baa0", marginTop: 4 }}>
+                        Minimálně 8 znaků a jedno číslo
+                    </p>
+                )}
+
+                {/* Potvrzení hesla */}
+                <div style={{ marginBottom: 20, marginTop: 12 }}>
+                    <label style={labelStyle}>Potvrzení hesla</label>
+                    <div style={{ position: "relative" }}>
+                        <div
+                            style={{
+                                position: "absolute",
+                                left: 12,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                                color: matchInvalid ? "#e24b4a" : "#7FA487",
+                                pointerEvents: "none",
+                                display: "flex",
+                                alignItems: "center",
+                            }}
+                        >
+                            <LockKeyhole size={15} />
+                        </div>
+
                         <input
                             type="password"
                             autoComplete="new-password"
-                            style={{ ...s.input, ...(matchInvalid ? s.inputError : {}) }}
+                            style={{
+                                ...inputStyle,
+                                ...(matchInvalid ? { border: "1.5px solid #e24b4a" } : {}),
+                            }}
                             placeholder="••••••••"
                             value={password2}
-                            onChange={e => setPassword2(e.target.value)}
-                            onFocus={(e) => { e.target.style.border = "1px solid #1F8A4D"; e.target.style.boxShadow = "0 0 0 3px rgba(31,138,77,0.1)"; }}
-                            onBlur={(e) => { e.target.style.border = matchInvalid ? "1px solid #e24b4a" : "1px solid #D9E2D9"; e.target.style.boxShadow = "none"; }}
+                            onChange={(e) => setPassword2(e.target.value)}
+                            onFocus={onFocus}
+                            onBlur={onBlur}
                             required
+                            aria-invalid={matchInvalid}
+                            aria-describedby={matchInvalid ? "password-match-error" : undefined}
                         />
-                        {matchInvalid && <p style={s.error}>Hesla se neshodují.</p>}
                     </div>
 
-                    <button
-                        type="submit"
-                        style={{ ...s.btn, ...(!validation.isValid || loading ? s.btnDisabled : {}) }}
-                        disabled={!validation.isValid || loading}
+                    {matchInvalid && (
+                        <p id="password-match-error" style={{ fontSize: 11, color: "#e24b4a", marginTop: 4 }}>
+                            Hesla se neshodují.
+                        </p>
+                    )}
+                </div>
+
+                {/* Chyba z backendu */}
+                {errorMessage && (
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: 8,
+                            marginTop: 6,
+                            marginBottom: 16,
+                            background: "#FFF4F4",
+                            border: "1px solid #F1C7C7",
+                            borderRadius: 12,
+                            padding: "12px 14px",
+                            color: "#C75B5B",
+                            fontSize: 13,
+                            lineHeight: 1.5,
+                        }}
                     >
-                        {loading ? "Ukládám..." : "Nastavit nové heslo"}
-                    </button>
-                </form>
-            </div>
+                        <CircleAlert size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+                        <span>{errorMessage}</span>
+                    </div>
+                )}
+
+                <button
+                    type="submit"
+                    disabled={isDisabled}
+                    style={{
+                        width: "100%",
+                        height: 48,
+                        background: isDisabled
+                            ? "#c8dfc8"
+                            : "linear-gradient(135deg, #2d7a2d, #4caf50)",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 12,
+                        fontSize: 15,
+                        fontWeight: 700,
+                        cursor: isDisabled ? "not-allowed" : "pointer",
+                        boxShadow: isDisabled ? "none" : "0 4px 14px rgba(45,122,45,0.3)",
+                        transition: "opacity 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                        if (!isDisabled) e.currentTarget.style.opacity = "0.9";
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.opacity = "1";
+                    }}
+                >
+                    {loading ? "Ukládám..." : "Nastavit nové heslo"}
+                </button>
+            </form>
         </div>
     );
 };
