@@ -1,98 +1,112 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import React, { useState } from "react";
 import RegisterUserView from "./RegisterUserView";
 import { registerUser } from "../../api/userApi";
 
-interface Props {
+interface RegisterUserProps {
     isAdminOrTeacher: boolean;
-    role?: string | null;
+    role?: string;
 }
 
-const RegisterUser: React.FC<Props> = ({ isAdminOrTeacher }) => {
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({ email: "" });
-    const [roleSelect, setRoleSelect] = useState(isAdminOrTeacher ? "TEACHER" : "STUDENT");
-    const [sent, setSent] = useState(false);
-    const [sentEmail, setSentEmail] = useState("");
+const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) => {
+    const initialRole = isAdminOrTeacher ? role || "TEACHER" : "STUDENT";
 
-    const handleRoleChange = (newRole: string) => setRoleSelect(newRole);
+    const [formData, setFormData] = useState({
+        email: "",
+        role: initialRole,
+    });
+
+    const [emailError, setEmailError] = useState("");
+    const [generalError, setGeneralError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+        const { name, value } = e.target;
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const finalRole = isAdminOrTeacher ? roleSelect : "STUDENT";
-        try {
-            await registerUser({ email: formData.email, role: finalRole });
-            setSentEmail(formData.email);
-            setSent(true);
-        } catch (err: any) {
-            alert("Registrace se nezdařila: " + err.message);
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+
+        if (name === "email") {
+            setEmailError("");
+            setGeneralError("");
+            setSuccessMessage("");
         }
     };
 
-    if (sent) {
-        return (
-            <div style={{
-                background: "white", borderRadius: 18, border: "0.5px solid #D9E2D9",
-                padding: 36, textAlign: "center", maxWidth: isAdminOrTeacher ? "100%" : 420, margin: "0 auto"
-            }}>
-                <div style={{
-                    width: 64, height: 64, background: "#D6EDDF", borderRadius: "50%",
-                    display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px"
-                }}>
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                        <rect x="4" y="8" width="20" height="14" rx="2" stroke="#1F8A4D" strokeWidth="1.8"/>
-                        <polyline points="4,8 14,17 24,8" stroke="#1F8A4D" strokeWidth="1.8" strokeLinejoin="round"/>
-                    </svg>
-                </div>
-                <h2 style={{ fontSize: 20, fontWeight: 500, color: "#1E2430", margin: "0 0 10px" }}>
-                    {isAdminOrTeacher ? "Pozvánka odeslána" : "Zkontrolujte e-mail"}
-                </h2>
-                <p style={{ fontSize: 14, color: "#667085", lineHeight: 1.6, margin: "0 0 28px" }}>
-                    {isAdminOrTeacher
-                        ? <>Odkaz pro dokončení registrace byl odeslán na <strong style={{ color: "#1E2430" }}>{sentEmail}</strong></>
-                        : <>Poslali jsme instrukce na <strong style={{ color: "#1E2430" }}>{sentEmail}</strong></>
-                    }
-                </p>
-                {isAdminOrTeacher ? (
-                    <div style={{ display: "flex", gap: 12 }}>
-                        <button
-                            onClick={() => { setSent(false); setFormData({ email: "" }); setSentEmail(""); }}
-                            style={{ flex: 1, height: 48, background: "#1F8A4D", color: "white", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: "pointer" }}
-                        >
-                            Přidat dalšího uživatele
-                        </button>
-                        <button
-                            onClick={() => navigate("/")}
-                            style={{ flex: 1, height: 48, background: "white", color: "#1F8A4D", border: "1px solid #D9E2D9", borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: "pointer" }}
-                        >
-                            Zpět na hlavní stránku
-                        </button>
-                    </div>
-                ) : (
-                    <button
-                        onClick={() => navigate("/")}
-                        style={{ width: "100%", height: 48, background: "#1F8A4D", color: "white", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 500, cursor: "pointer" }}
-                    >
-                        Zpět na přihlášení
-                    </button>
-                )}
-            </div>
-        );
-    }
+    const handleRoleChange = (newRole: string) => {
+        if (!isAdminOrTeacher) return;
+
+        setFormData((prev) => ({
+            ...prev,
+            role: newRole,
+        }));
+
+        setGeneralError("");
+        setSuccessMessage("");
+    };
+
+    // Odeslání registračního odkazu
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setEmailError("");
+        setGeneralError("");
+        setSuccessMessage("");
+        setLoading(true);
+
+        try {
+            const payload = {
+                email: formData.email.trim(),
+                role: isAdminOrTeacher ? formData.role : "STUDENT",
+            };
+
+            const response = await registerUser(payload);
+
+            setSuccessMessage(
+                response?.message || "Pozvánka byla úspěšně odeslána."
+            );
+
+            setFormData({
+                email: "",
+                role: initialRole,
+            });
+        } catch (err: any) {
+            const message =
+                err?.response?.data?.message ||
+                err?.message ||
+                "Nepodařilo se vytvořit uživatele.";
+
+            const normalized = String(message).toLowerCase();
+
+            // Speciální hláška pro již existující e-mail
+            if (
+                normalized.includes("email") &&
+                (normalized.includes("exist") ||
+                    normalized.includes("už") ||
+                    normalized.includes("already"))
+            ) {
+                setEmailError("Uživatel s tímto e-mailem už existuje.");
+            } else {
+                setGeneralError(message);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <RegisterUserView
-            formData={{ ...formData, role: roleSelect }}
+            formData={formData}
             onChange={handleChange}
             onSubmit={handleSubmit}
             isAdminOrTeacher={isAdminOrTeacher}
-            roleSelect={roleSelect}
+            roleSelect={formData.role}
             onRoleChange={handleRoleChange}
+            emailError={emailError}
+            generalError={generalError}
+            successMessage={successMessage}
+            loading={loading}
         />
     );
 };

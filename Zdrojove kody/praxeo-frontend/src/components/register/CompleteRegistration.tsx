@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import CompleteRegistrationView from "./CompleteRegistrationView";
-import Cookies from "js-cookie";
 import {
     completeRegistration,
     loginUser,
-    getRoleByToken
+    getRoleByToken,
 } from "../../api/userApi";
+import { useAuth } from "../../context/AuthContext";
 
 const CompleteRegistration: React.FC = () => {
     const [params] = useSearchParams();
     const token = params.get("token") || "";
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [role, setRole] = useState("");
     const [firstName, setFirstName] = useState("");
@@ -20,9 +21,10 @@ const CompleteRegistration: React.FC = () => {
     const [companyName, setCompanyName] = useState("");
     const [password, setPassword] = useState("");
     const [agreedToTerms, setAgreedToTerms] = useState(false);
-
     const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
+    // Načtení role podle tokenu z pozvánky
     useEffect(() => {
         const fetchRole = async () => {
             if (!token) return;
@@ -32,6 +34,7 @@ const CompleteRegistration: React.FC = () => {
                 setRole(data.role);
             } catch (e) {
                 console.error("Chyba získání role:", e);
+                setErrorMessage("Nepodařilo se načíst informace o registraci.");
             }
         };
 
@@ -40,13 +43,14 @@ const CompleteRegistration: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMessage("");
         setLoading(true);
 
         const payload: any = {
             token,
             password,
             firstName,
-            lastName
+            lastName,
         };
 
         if (role === "STUDENT") payload.studentNumber = studentNumber;
@@ -56,21 +60,23 @@ const CompleteRegistration: React.FC = () => {
             const result = await completeRegistration(payload);
 
             if (!result.success) {
-                alert(result.message || "Chyba při dokončení registrace.");
-                setLoading(false);
+                setErrorMessage(result.message || "Chyba při dokončení registrace.");
                 return;
             }
 
-            const login = await loginUser(result.email, password);
+            const auth = await loginUser(result.email, password);
 
-            Cookies.set("token", login.token);
-            Cookies.set("userEmail", login.email);
-            Cookies.set("userRole", login.role);
+            // Přihlášení přes AuthContext, aby se header aktualizoval hned
+            login(auth.token, {
+                email: auth.email,
+                role: auth.role,
+                firstName: auth.firstName,
+                lastName: auth.lastName,
+            });
 
             navigate("/summary");
-
-        } catch (err) {
-            alert("Chyba komunikace se serverem.");
+        } catch {
+            setErrorMessage("Chyba komunikace se serverem.");
         } finally {
             setLoading(false);
         }
@@ -85,6 +91,7 @@ const CompleteRegistration: React.FC = () => {
             companyName={companyName}
             password={password}
             loading={loading}
+            errorMessage={errorMessage}
             setFirstName={setFirstName}
             setLastName={setLastName}
             setStudentNumber={setStudentNumber}
