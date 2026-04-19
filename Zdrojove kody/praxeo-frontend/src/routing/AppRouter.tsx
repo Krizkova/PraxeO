@@ -1,4 +1,3 @@
-// src/routing/AppRouter.tsx
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import HomePage from "../pages/HomePage";
@@ -19,11 +18,10 @@ const AppRouter: React.FC = () => {
             <Route path="/add-user" element={<RegisterUserPage />} />
             <Route path="/verify" element={<VerifyPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/summary" element={<SummaryOfPracticesPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/practices/:id" element={<PracticeDetailPage />} />
+            <Route path="/summary" element={<SummaryOfPracticesPage />} />
             <Route path="/practices/create" element={<CreatePracticePage />} />
-
+            <Route path="/practices/:id" element={<PracticeDetailPage />} />
         </Routes>
     );
 };
