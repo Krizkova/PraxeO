@@ -6,15 +6,18 @@ const API = import.meta.env.VITE_API_BASE_URL;
 const api = axios.create({
     baseURL: API,
     headers: {
-        "Content-Type": "application/json"
-    }
+        "Content-Type": "application/json",
+    },
 });
 
 api.interceptors.request.use((config) => {
     const token = Cookies.get("token");
+
     if (token) {
+        config.headers = config.headers ?? {};
         config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
 });
 
@@ -37,7 +40,7 @@ export async function registerUser(data: any) {
 
 export async function getRoleByToken(token: string) {
     const res = await api.get("/users/role-by-token", {
-        params: { token }
+        params: { token },
     });
     return res.data;
 }
@@ -61,3 +64,5 @@ export async function getCurrentUser() {
     const res = await api.get("/users/me");
     return res.data;
 }
+
+export default api;

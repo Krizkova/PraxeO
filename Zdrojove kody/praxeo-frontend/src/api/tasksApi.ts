@@ -10,10 +10,12 @@ const api = axios.create({
     withCredentials: true,
 });
 
+// Přidání Bearer tokenu do každého requestu
 api.interceptors.request.use((config) => {
     const token = Cookies.get("token");
 
     if (token) {
+        config.headers = config.headers ?? {};
         config.headers.Authorization = `Bearer ${token}`;
     }
 

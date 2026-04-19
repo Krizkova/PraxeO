@@ -10,11 +10,12 @@ const api = axios.create({
     withCredentials: true,
 });
 
-
+// Přidání Bearer tokenu do každého požadavku
 api.interceptors.request.use((config) => {
     const token = Cookies.get("token");
 
     if (token) {
+        config.headers = config.headers ?? {};
         config.headers.Authorization = `Bearer ${token}`;
     }
 
@@ -41,7 +42,7 @@ export const changePracticeState = async (
     state: "CANCELED" | "COMPLETED"
 ) => {
     const res = await api.put(`/practices/${id}/state`, null, {
-        params: { state }
+        params: { state },
     });
     return res.data;
 };
@@ -55,15 +56,11 @@ export const uploadAttachment = async (practiceId: string | number, file: File) 
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await api.post(
-        `/attachments/upload/${practiceId}`,
-        formData,
-        {
-            headers: {
-                "Content-Type": "multipart/form-data"
-            }
-        }
-    );
+    const res = await api.post(`/attachments/upload/${practiceId}`, formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
 
     return res.data;
 };
@@ -75,7 +72,7 @@ export const deleteAttachment = async (id: number) => {
 
 export const downloadAttachment = async (id: number) => {
     return api.get(`/attachments/${id}/download`, {
-        responseType: "blob"
+        responseType: "blob",
     });
 };
 
@@ -90,7 +87,7 @@ export const createPractice = async (data: {
 
 export const assignStudent = async (id: number, assign: boolean) => {
     const res = await api.put(`/practices/${id}/assign-student`, null, {
-        params: { assign }
+        params: { assign },
     });
     return res.data;
 };
@@ -100,7 +97,7 @@ export const changeStudentState = async (
     state: "ACTIVE" | "SUBMITTED"
 ) => {
     const res = await api.put(`/practices/${id}/student-state`, null, {
-        params: { state }
+        params: { state },
     });
     return res.data;
 };
