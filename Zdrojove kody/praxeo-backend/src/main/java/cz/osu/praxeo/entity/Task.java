@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,8 +43,8 @@ public class Task {
     private List<String> files = new ArrayList<>();
 
     private LocalDateTime creationDate;
-    private LocalDateTime expectedEndDate; // Can be null
-    private LocalDateTime actualEndDate;
+    private LocalDate expectedEndDate; // Can be null
+    private LocalDate actualEndDate;
 
     private boolean closed;
 

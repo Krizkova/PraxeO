@@ -12,6 +12,7 @@ import cz.osu.praxeo.mapper.TaskMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -104,7 +105,7 @@ public class TaskService {
             task.setEvaluationAuthor(userService.getCurrentUser());
             // If evaluation is added, we might want to close the task
             if (task.getActualEndDate() == null) {
-                task.setActualEndDate(LocalDateTime.now());
+                task.setActualEndDate(LocalDate.now());
                 task.setStatus(TaskStatus.COMPLETED);
             }
         }
