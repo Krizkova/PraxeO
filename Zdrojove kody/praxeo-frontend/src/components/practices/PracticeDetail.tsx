@@ -28,6 +28,7 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
     // Samostatná chyba pro přihlášení k praxi — zobrazí se inline pod tlačítkem
     const [assignError, setAssignError] = useState<string | null>(null);
 
+
     // Načtení detailu praxe a jejích příloh
     useEffect(() => {
         if (!id) return;
@@ -59,6 +60,9 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
         practice?.canEditFinalEvaluation;
 
     const canUpload = practice?.canUploadAttachments;
+
+    // Existuje alespoň jeden dokončený task: student se nemůže odhlásit
+    const hasCompletedTask = (practice?.tasks || []).some((t: any) => t.status === "COMPLETED");
 
     const handleUpdate = (data: any) => {
         if (!practice) return;
@@ -173,6 +177,7 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             canEditFinalEvaluation={!!practice?.canEditFinalEvaluation}
             canChangeState={!!practice?.canChangeState && !practice?.closed}
             canUpload={!!canUpload}
+            hasCompletedTask={hasCompletedTask}
             onUpdate={handleUpdate}
             onFileUpload={handleFileUpload}
             onDeleteAttachment={handleDeleteAttachment}

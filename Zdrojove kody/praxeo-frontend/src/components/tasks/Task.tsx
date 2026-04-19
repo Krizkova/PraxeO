@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { getTasks, createTask, deleteTask } from "../../api/tasksApi";
+import { getTasks, createTask, deleteTask, updateTask } from "../../api/tasksApi";
 import TaskView from "./TaskView";
 
 interface Props {
@@ -54,12 +54,29 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
             });
     };
 
+    // Aktualizace existujícího tasku
+    const handleUpdate = (id: number, data: any) => {
+        setError(null);
+
+        updateTask(id, data)
+            .then((res) => {
+                setTasks((prev) => prev.map((t) => t.id === id ? res : t));
+                setShow(false);
+            })
+            .catch((err: any) => {
+                setError(
+                    err?.response?.data?.message || "Nepodařilo se upravit task."
+                );
+            });
+    };
+
     return (
         <TaskView
             tasks={tasks}
             show={show}
             setShow={setShow}
             onCreate={handleCreate}
+            onUpdate={handleUpdate}
             onDelete={handleDelete}
             allowCreate={allowCreate}
             error={error}

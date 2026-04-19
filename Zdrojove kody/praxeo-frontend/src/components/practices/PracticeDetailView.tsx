@@ -40,6 +40,7 @@ interface Props {
     onDeleteAttachment: (id: number) => void;
     onDownloadAttachment: (id: number, title: string) => void;
     onChangeState: (state: "CANCELED" | "COMPLETED") => void;
+    hasCompletedTask?: boolean;
     onAssignStudent: (assign: boolean) => void;
     onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
 }
@@ -77,6 +78,7 @@ const PracticeDetailView: React.FC<Props> = ({
                                                  onDeleteAttachment,
                                                  onDownloadAttachment,
                                                  onChangeState,
+                                                 hasCompletedTask,
                                                  onAssignStudent,
                                                  onChangeStudentState,
                                              }) => {
@@ -499,8 +501,8 @@ const PracticeDetailView: React.FC<Props> = ({
 
                             {canEditStudent && practice.state === "ACTIVE" && (
                                 <>
-                                    {/* Tlačítko odhlášení: skryto pokud student již přidal hodnocení */}
-                                    {!practice.studentEvaluation?.trim() && (
+                                    {/* Tlačítko odhlášení: skryto pokud student již přidal hodnocení nebo existuje dokončený task */}
+                                    {!practice.studentEvaluation?.trim() && !hasCompletedTask && (
                                         <button style={btnOutline} onClick={() => onAssignStudent(false)}>
                                             Odhlásit se z praxe
                                         </button>
@@ -530,17 +532,18 @@ const PracticeDetailView: React.FC<Props> = ({
                                 </button>
                             )}
 
-                            {/* Tlačítko hodnocení pro studenta */}
-                            {canEdit && role === "STUDENT" && (
-                                <button style={btnOutline} onClick={() => setEditMode(true)}>
+                            {/* Tlačítko hodnocení pro studenta: v aktivním i odevzdaném stavu */}
+                            {role === "STUDENT" && practice.studentEmail &&
+                                (practice.state === "ACTIVE" || practice.state === "SUBMITTED") && (
+                                    <button style={btnOutline} onClick={() => setEditMode(true)}>
                                     <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
                                         <MessageSquare size={14} />
                                         {practice.studentEvaluation?.trim()
                                             ? "Upravit hodnocení"
                                             : "Přidat hodnocení"}
                                     </span>
-                                </button>
-                            )}
+                                    </button>
+                                )}
 
                             {/* Tlačítko finálního hodnocení pro zakladatele (učitel/externista) — při stavu SUBMITTED */}
                             {canEditFinalEvaluation && practice.state === "SUBMITTED" && (
@@ -581,7 +584,7 @@ const PracticeDetailView: React.FC<Props> = ({
                         <div style={{ marginTop: 24 }}>
                             <Task
                                 practiceId={practice.id}
-                                allowCreate={practice.state === "NEW" || practice.state === "ACTIVE"}
+                                allowCreate={(practice.state === "NEW" || practice.state === "ACTIVE") && (canEditFounder || canEditStudent || role === "ADMIN")}
                             />
                         </div>
 
