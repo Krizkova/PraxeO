@@ -4,6 +4,10 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
@@ -27,10 +31,31 @@ public class Task {
     @JoinColumn(name = "founder_id")
     private User founder;
 
+    @ElementCollection
+    @CollectionTable(name = "task_links", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "link")
+    private List<String> links = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "task_files", joinColumns = @JoinColumn(name = "task_id"))
+    @Column(name = "file_path")
+    private List<String> files = new ArrayList<>();
+
+    private LocalDateTime creationDate;
+    private LocalDateTime expectedEndDate; // Can be null
+    private LocalDateTime actualEndDate;
+
     private boolean closed;
 
     @Column(columnDefinition = "TEXT")
     private String finalEvaluation;
+
+    @ManyToOne
+    @JoinColumn(name = "evaluation_author_id")
+    private User evaluationAuthor; // Who inserted/last edited the evaluation
+
+    @Enumerated(EnumType.STRING)
+    private TaskStatus status;
 
     private boolean reportFlag;
 }

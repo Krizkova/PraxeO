@@ -25,13 +25,25 @@ export const getTasks = async (practiceId: number | string) => {
     return res.data;
 };
 
-export const createTask = async (
-    practiceId: number,
-    data: {
-        title: string;
-        description: string;
-    }
-) => {
+export interface TaskDto {
+    id?: number;
+    title: string;
+    description: string;
+    authorId?: number;
+    founder?: any; // User object
+    links?: string[];
+    files?: string[];
+    creationDate?: string;
+    expectedEndDate?: string | null;
+    actualEndDate?: string | null;
+    closed: boolean;
+    finalEvaluation?: string;
+    evaluationAuthorName?: string;
+    status: 'ACTIVE' | 'COMPLETED';
+    reportFlag: boolean;
+}
+
+export const createTask = async (practiceId: number, data: Partial<TaskDto>) => {
     const res = await api.post(`/tasks/practice/${practiceId}`, data);
     return res.data;
 };

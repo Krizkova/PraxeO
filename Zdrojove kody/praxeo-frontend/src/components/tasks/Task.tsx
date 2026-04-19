@@ -1,44 +1,44 @@
-import React, {useEffect,useState} from "react"
-import {getTasks,createTask,deleteTask} from "../../api/tasksApi"
+import React, { useEffect, useState } from "react"
+import { getTasks, createTask, deleteTask } from "../../api/tasksApi"
 import TaskView from "./TaskView"
 
-interface Props{
-    practiceId:number,
-    allowCreate:boolean
+interface Props {
+    practiceId: number,
+    allowCreate: boolean
 }
 
-const Task:React.FC<Props>=({practiceId, allowCreate})=>{
+const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
 
-    const [tasks,setTasks]=useState<any[]>([])
-    const [show,setShow]=useState(false)
+    const [tasks, setTasks] = useState<any[]>([])
+    const [show, setShow] = useState(false)
 
-    useEffect(()=>{
+    useEffect(() => {
         getTasks(practiceId)
-            .then(res=>setTasks(res || []))
-    },[practiceId])
+            .then(res => setTasks(res || []))
+    }, [practiceId])
 
-    const handleCreate=(data:any)=>{
-        createTask(practiceId,data)
-            .then(res=>{
-                setTasks(prev=>[...prev,res])
+    const handleCreate = (data: any) => {
+        createTask(practiceId, data)
+            .then(res => {
+                setTasks(prev => [...prev, res])
                 setShow(false)
             })
-            .catch((err:any)=>{
+            .catch((err: any) => {
                 alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
             })
     }
 
-    const handleDelete=(id:number)=>{
+    const handleDelete = (id: number) => {
         deleteTask(id)
-            .then(()=>{
-                setTasks(prev=>prev.filter(t=>t.id!==id))
+            .then(() => {
+                setTasks(prev => prev.filter(t => t.id !== id))
             })
-            .catch((err:any)=>{
+            .catch((err: any) => {
                 alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
             })
     }
 
-    return(
+    return (
         <TaskView
             tasks={tasks}
             show={show}
