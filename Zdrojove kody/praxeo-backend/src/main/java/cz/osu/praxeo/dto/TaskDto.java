@@ -5,6 +5,7 @@ import cz.osu.praxeo.entity.User;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -19,8 +20,8 @@ public class TaskDto {
     private List<String> links;
     private List<String> files;
     private LocalDateTime creationDate;
-    private LocalDateTime expectedEndDate;
-    private LocalDateTime actualEndDate;
+    private LocalDate expectedEndDate;
+    private LocalDate actualEndDate;
     private String evaluationAuthorName;
     private TaskStatus status;
     private String description;
