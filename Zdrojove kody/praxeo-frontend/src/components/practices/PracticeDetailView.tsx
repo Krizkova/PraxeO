@@ -302,7 +302,7 @@ const PracticeDetailView: React.FC<Props> = ({
                             <div className="mt-3">
                                 <Task
                                     practiceId={practice.id}
-                                    allowCreate={practice.state === "NEW" || practice.state === "ACTIVE"}
+                                    allowCreate={(practice.state === "NEW" || practice.state === "ACTIVE") && (canEditFounder || canEditStudent || role === "ADMIN")}
                                 />
                             </div>
 

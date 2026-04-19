@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { getTasks, createTask, deleteTask } from "../../api/tasksApi"
+import { getTasks, createTask, deleteTask, updateTask } from "../../api/tasksApi"
 import TaskView from "./TaskView"
 
 interface Props {
@@ -38,12 +38,24 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
             })
     }
 
+    const handleUpdate = (id: number, data: any) => {
+        updateTask(id, data)
+            .then(res => {
+                setTasks(prev => prev.map(t => t.id === id ? res : t))
+                setShow(false)
+            })
+            .catch((err: any) => {
+                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+            })
+    }
+
     return (
         <TaskView
             tasks={tasks}
             show={show}
             setShow={setShow}
             onCreate={handleCreate}
+            onUpdate={handleUpdate}
             onDelete={handleDelete}
             allowCreate={allowCreate}
         />

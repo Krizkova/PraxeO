@@ -52,3 +52,8 @@ export const deleteTask = async (id: number) => {
     const res = await api.delete(`/tasks/${id}`);
     return res.data;
 };
+
+export const updateTask = async (id: number, data: Partial<TaskDto>) => {
+    const res = await api.put(`/tasks/${id}`, data);
+    return res.data;
+};
