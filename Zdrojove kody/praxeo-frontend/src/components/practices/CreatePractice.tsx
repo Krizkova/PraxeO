@@ -12,18 +12,24 @@ const CreatePractice: React.FC = () => {
 
     const navigate = useNavigate();
 
+    // Odeslání formuláře pro vytvoření nové praxe
     const handleSubmit = async () => {
         try {
             setLoading(true);
+            setError(null);
+
             const created = await createPractice({
                 name,
                 description,
-                completedAt
+                completedAt,
             });
+
             navigate(`/practices/${created.id}`);
         } catch (err: any) {
-            alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
-            setError("Nepodařilo se vytvořit praxi.");
+            const message =
+                err?.response?.data?.message || "Nepodařilo se vytvořit praxi.";
+
+            setError(message);
         } finally {
             setLoading(false);
         }

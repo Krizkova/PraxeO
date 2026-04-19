@@ -9,7 +9,7 @@ import {
     updatePractice,
     changePracticeState,
     assignStudent,
-    changeStudentState
+    changeStudentState,
 } from "../../api/practicesApi";
 import PracticeDetailView from "./PracticeDetailView";
 
@@ -25,10 +25,15 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
     const [attachments, setAttachments] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // Samostatná chyba pro přihlášení k praxi — zobrazí se inline pod tlačítkem
+    const [assignError, setAssignError] = useState<string | null>(null);
 
+    // Načtení detailu praxe a jejích příloh
     useEffect(() => {
         if (!id) return;
+
         setLoading(true);
+        setError(null);
 
         getPractice(id)
             .then((practiceDto) => {
@@ -42,94 +47,114 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             .finally(() => setLoading(false));
     }, [id]);
 
-    if (!practice) return null;
-
     const role = document.cookie
         .split("; ")
-        .find(row => row.startsWith("userRole="))
+        .find((row) => row.startsWith("userRole="))
         ?.split("=")[1];
 
     const canEdit =
         role === "ADMIN" ||
-        practice.canEditFounderFields ||
-        practice.canEditStudentFields ||
-        practice.canEditFinalEvaluation;
+        practice?.canEditFounderFields ||
+        practice?.canEditStudentFields ||
+        practice?.canEditFinalEvaluation;
 
-    const canUpload = practice.canUploadAttachments;
+    const canUpload = practice?.canUploadAttachments;
 
     const handleUpdate = (data: any) => {
+        if (!practice) return;
+        setError(null);
         updatePractice(practice.id, data)
-            .then(updated => {
+            .then((updated) => {
                 setPractice(updated);
                 setEditMode(false);
             })
             .catch((err: any) => {
-                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+                setError(err?.response?.data?.message || "Nepodařilo se uložit změny.");
             });
     };
 
     const handleFileUpload = (file: File) => {
-        if (!canUpload) return;
-
+        if (!practice || !canUpload) return;
+        setError(null);
         uploadAttachment(practice.id, file)
             .then((newFile) => {
-                setAttachments(prev => [...prev, newFile]);
+                setAttachments((prev) => [...prev, newFile]);
             })
             .catch((err: any) => {
-                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+                setError(err?.response?.data?.message || "Nepodařilo se nahrát přílohu.");
             });
     };
 
     const handleDeleteAttachment = (attachmentId: number) => {
+        setError(null);
         deleteAttachment(attachmentId)
             .then(() => {
-                setAttachments(prev => prev.filter(a => a.id !== attachmentId));
+                setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
             })
             .catch((err: any) => {
-                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+                setError(err?.response?.data?.message || "Nepodařilo se smazat přílohu.");
             });
     };
 
+    // Stažení souboru do zařízení uživatele
     const handleDownloadAttachment = (attachmentId: number, title: string) => {
-        downloadAttachment(attachmentId).then(res => {
-            const url = window.URL.createObjectURL(new Blob([res.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = title;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        });
+        downloadAttachment(attachmentId)
+            .then((res) => {
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = title;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+            })
+            .catch((err: any) => {
+                setError(err?.response?.data?.message || "Nepodařilo se stáhnout přílohu.");
+            });
     };
 
     const handleChangeState = (state: "CANCELED" | "COMPLETED") => {
+        if (!practice) return;
+        setError(null);
         changePracticeState(practice.id, state)
-            .then(updated => {
+            .then((updated) => {
                 setPractice(updated);
                 setEditMode(false);
             })
             .catch((err: any) => {
-                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+                setError(err?.response?.data?.message || "Nepodařilo se změnit stav praxe.");
             });
     };
 
+    // Přihlášení/odhlášení studenta: chyba 409 = student má jinou aktivní praxi
     const handleAssignStudent = (assign: boolean) => {
+        if (!practice) return;
+        setAssignError(null);
         assignStudent(practice.id, assign)
-            .then(updated => {
+            .then((updated) => {
                 setPractice(updated);
             })
             .catch((err: any) => {
-                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+                const status = err?.response?.status;
+                const msg = err?.response?.data?.message || "";
+                if (status === 409) {
+                    setAssignError("Nelze se přihlásit — již máte jinou aktivní praxi.");
+                } else {
+                    setAssignError(msg || "Nepodařilo se změnit přiřazení studenta.");
+                }
             });
     };
 
     const handleStudentState = (state: "ACTIVE" | "SUBMITTED") => {
+        if (!practice) return;
+        setError(null);
         changeStudentState(practice.id, state)
-            .then(updated => {
+            .then((updated) => {
                 setPractice(updated);
             })
             .catch((err: any) => {
-                alert("Chyba: " + (err.response?.data?.message || "Nastala neočekávaná chyba."));
+                setError(err?.response?.data?.message || "Nepodařilo se změnit stav studenta.");
             });
     };
 
@@ -138,15 +163,16 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             practice={practice}
             loading={loading}
             error={error}
+            assignError={assignError}
             attachments={attachments}
             editMode={editMode}
             setEditMode={setEditMode}
-            canEdit={canEdit}
-            canEditFounder={practice.canEditFounderFields}
-            canEditStudent={practice.canEditStudentFields}
-            canEditFinalEvaluation={practice.canEditFinalEvaluation}
-            canChangeState={practice.canChangeState && !practice.closed}
-            canUpload={canUpload}
+            canEdit={!!canEdit}
+            canEditFounder={!!practice?.canEditFounderFields}
+            canEditStudent={!!practice?.canEditStudentFields}
+            canEditFinalEvaluation={!!practice?.canEditFinalEvaluation}
+            canChangeState={!!practice?.canChangeState && !practice?.closed}
+            canUpload={!!canUpload}
             onUpdate={handleUpdate}
             onFileUpload={handleFileUpload}
             onDeleteAttachment={handleDeleteAttachment}
