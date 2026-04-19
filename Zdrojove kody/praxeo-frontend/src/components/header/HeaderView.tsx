@@ -34,6 +34,11 @@ const HeaderView: React.FC<HeaderViewProps> = ({ email, role, onLogout, onAddUse
         cursor: "pointer",
     };
 
+    // Klik na logo: vždy přechod na domovskou stránku
+    const handleLogoClick = () => {
+        navigate("/");
+    };
+
     return (
         <nav style={{
             background: "#1F8A4D",
@@ -43,7 +48,19 @@ const HeaderView: React.FC<HeaderViewProps> = ({ email, role, onLogout, onAddUse
             padding: "0 24px",
             justifyContent: "space-between",
         }}>
-            <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            {/* Logo: stejný vzhled jako originál, ale s opravou navigace */}
+            <button
+                onClick={handleLogoClick}
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                }}
+            >
                 <div style={{
                     width: 32,
                     height: 32,
@@ -56,16 +73,17 @@ const HeaderView: React.FC<HeaderViewProps> = ({ email, role, onLogout, onAddUse
                     flexShrink: 0,
                 }}>
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white"/>
-                        <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
-                        <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.6"/>
-                        <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white"/>
+                        <rect x="2" y="2" width="6" height="6" rx="1.5" fill="white" />
+                        <rect x="10" y="2" width="6" height="6" rx="1.5" fill="white" opacity="0.6" />
+                        <rect x="2" y="10" width="6" height="6" rx="1.5" fill="white" opacity="0.6" />
+                        <rect x="10" y="10" width="6" height="6" rx="1.5" fill="white" />
                     </svg>
                 </div>
                 <span style={{ color: "white", fontSize: 18, fontWeight: 500 }}>PraxeO</span>
                 <span style={{ color: "rgba(255,255,255,0.5)", fontSize: 12 }}>Ostravská univerzita</span>
-            </a>
+            </button>
 
+            {/* Akce: zobrazují se pouze přihlášeným */}
             {email && (
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <button style={btnOutline} onClick={() => navigate("/summary")}>
