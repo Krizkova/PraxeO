@@ -2,7 +2,7 @@
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import PracticeDetail from "./PracticeDetail";
+import PracticeDetail from "../PracticeDetail";
 import {
     changePracticeState,
     deleteAttachment,
@@ -11,7 +11,7 @@ import {
     getPractice,
     updatePractice,
     uploadAttachment,
-} from "../../api/practicesApi";
+} from "../../../api/practicesApi";
 
 type PracticeDetailViewProps = {
     practice: any;
