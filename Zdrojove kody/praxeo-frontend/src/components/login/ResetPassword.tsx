@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ResetPasswordView from "./ResetPasswordView";
-import { loginUser, resetPassword } from "../../api/userApi";
+import { loginUser, resetPassword, getRoleByToken } from "../../api/userApi";
 import { useAuth } from "../../context/AuthContext";
 
 const ResetPassword: React.FC = () => {
@@ -16,6 +16,34 @@ const ResetPassword: React.FC = () => {
     const [password2, setPassword2] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [tokenInvalid, setTokenInvalid] = useState(false);
+
+    // Ověření platnosti tokenu při načtení stránky
+    useEffect(() => {
+        let isActive = true;
+
+        const checkToken = async () => {
+            if (!token) {
+                setTokenInvalid(true);
+                setErrorMessage("Tento odkaz již není platný nebo byl použit.");
+                return;
+            }
+
+            try {
+                await getRoleByToken(token);
+            } catch (err: any) {
+                if (!isActive) return;
+                setTokenInvalid(true);
+                setErrorMessage("Tento odkaz již není platný nebo byl použit.");
+            }
+        };
+
+        checkToken();
+
+        return () => {
+            isActive = false;
+        };
+    }, [token]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,10 +81,12 @@ const ResetPassword: React.FC = () => {
                 lastName: loginResult.lastName,
             });
 
-            navigate("/summary");
+            navigate("/summary", { replace: true, state: { fromPasswordReset: true } });
         } catch (err: any) {
+            setTokenInvalid(true);
             setErrorMessage(
-                err?.response?.data?.message || "Nastala neočekávaná chyba."
+                err?.response?.data?.message ||
+                "Tento odkaz již není platný nebo byl použit."
             );
         } finally {
             setLoading(false);
@@ -69,6 +99,7 @@ const ResetPassword: React.FC = () => {
             password2={password2}
             loading={loading}
             errorMessage={errorMessage}
+            tokenInvalid={tokenInvalid}
             setPassword={setPassword}
             setPassword2={setPassword2}
             handleSubmit={handleSubmit}

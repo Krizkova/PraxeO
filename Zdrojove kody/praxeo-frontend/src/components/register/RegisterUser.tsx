@@ -2,15 +2,24 @@ import React, { useState } from "react";
 import RegisterUserView from "./RegisterUserView";
 import { registerUser } from "../../api/userApi";
 
+type RegisterRole = "STUDENT" | "TEACHER" | "EXTERNAL_WORKER" | "ADMIN";
+
 interface RegisterUserProps {
     isAdminOrTeacher: boolean;
     role?: string;
 }
 
-const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) => {
-    const initialRole = isAdminOrTeacher ? role || "TEACHER" : "STUDENT";
+interface RegisterUserFormData {
+    email: string;
+    role: RegisterRole;
+}
 
-    const [formData, setFormData] = useState({
+const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) => {
+    const initialRole: RegisterRole = isAdminOrTeacher
+        ? ((role as RegisterRole) || "TEACHER")
+        : "STUDENT";
+
+    const [formData, setFormData] = useState<RegisterUserFormData>({
         email: "",
         role: initialRole,
     });
@@ -19,6 +28,7 @@ const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) =
     const [generalError, setGeneralError] = useState("");
     const [successMessage, setSuccessMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const [sent, setSent] = useState(false);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -40,11 +50,23 @@ const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) =
 
         setFormData((prev) => ({
             ...prev,
-            role: newRole,
+            role: newRole as RegisterRole,
         }));
 
         setGeneralError("");
         setSuccessMessage("");
+        setEmailError("");
+    };
+
+    const handleAddAnotherUser = () => {
+        setSent(false);
+        setSuccessMessage("");
+        setEmailError("");
+        setGeneralError("");
+        setFormData({
+            email: "",
+            role: initialRole,
+        });
     };
 
     // Odeslání registračního odkazu
@@ -56,21 +78,36 @@ const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) =
         setLoading(true);
 
         try {
+            const normalizedEmail = formData.email.trim().toLowerCase();
+            const targetRole = isAdminOrTeacher ? formData.role : "STUDENT";
+
+            // U role TEACHER musí e-mail končit na @osu.cz
+            if (
+                targetRole === "TEACHER" &&
+                !normalizedEmail.endsWith("@osu.cz")
+            ) {
+                setEmailError("Učitel musí mít univerzitní e-mail @osu.cz.");
+                setLoading(false);
+                return;
+            }
+
             const payload = {
                 email: formData.email.trim(),
-                role: isAdminOrTeacher ? formData.role : "STUDENT",
+                role: targetRole,
             };
 
             const response = await registerUser(payload);
 
             setSuccessMessage(
-                response?.message || "Pozvánka byla úspěšně odeslána."
+                "Odkaz pro dokončení registrace byl odeslán na zadaný e-mail. Zkontrolujte prosím svou schránku."
             );
+            setSent(true);
 
             setFormData({
                 email: "",
                 role: initialRole,
             });
+
         } catch (err: any) {
             const message =
                 err?.response?.data?.message ||
@@ -107,6 +144,8 @@ const RegisterUser: React.FC<RegisterUserProps> = ({ isAdminOrTeacher, role }) =
             generalError={generalError}
             successMessage={successMessage}
             loading={loading}
+            sent={sent}
+            onAddAnotherUser={handleAddAnotherUser}
         />
     );
 };

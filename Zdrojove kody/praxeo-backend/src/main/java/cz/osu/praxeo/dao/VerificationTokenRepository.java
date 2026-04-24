@@ -10,4 +10,10 @@ public interface VerificationTokenRepository extends JpaRepository<VerificationT
 
     // nový method pro test completeRegistrationSuccess
     Optional<VerificationToken> findByUser(cz.osu.praxeo.entity.User user);
+
+    // Slouží k nalezení a smazání starého tokenu před vytvořením nového při obnově hesla
+    Optional<VerificationToken> findByUserAndPurpose(
+            cz.osu.praxeo.entity.User user,
+            cz.osu.praxeo.entity.Purpose purpose
+    );
 }

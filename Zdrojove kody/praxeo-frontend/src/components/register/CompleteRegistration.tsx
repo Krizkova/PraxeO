@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import CompleteRegistrationView from "./CompleteRegistrationView";
 import {
     completeRegistration,
@@ -7,6 +7,15 @@ import {
     getRoleByToken,
 } from "../../api/userApi";
 import { useAuth } from "../../context/AuthContext";
+
+type CompleteRegistrationPayload = {
+    token: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    studentNumber?: string;
+    companyName?: string;
+};
 
 const CompleteRegistration: React.FC = () => {
     const [params] = useSearchParams();
@@ -23,41 +32,74 @@ const CompleteRegistration: React.FC = () => {
     const [agreedToTerms, setAgreedToTerms] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [tokenInvalid, setTokenInvalid] = useState(false);
 
     // Načtení role podle tokenu z pozvánky
     useEffect(() => {
+        let isActive = true;
+
         const fetchRole = async () => {
-            if (!token) return;
+            if (!token) {
+                return;
+            }
 
             try {
                 const data = await getRoleByToken(token);
+
+                if (!isActive) {
+                    return;
+                }
+
                 setRole(data.role);
-            } catch (e) {
-                console.error("Chyba získání role:", e);
-                setErrorMessage("Nepodařilo se načíst informace o registraci.");
+            } catch (error: any) {
+                if (!isActive) {
+                    return;
+                }
+
+                console.error("Chyba získání role:", error);
+                setTokenInvalid(true);
+                setErrorMessage(
+                    error?.response?.data?.message ||
+                    "Tento odkaz již není platný nebo byl použit."
+                );
             }
         };
 
         fetchRole();
+
+        return () => {
+            isActive = false;
+        };
     }, [token]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setErrorMessage("");
-        setLoading(true);
-
-        const payload: any = {
+    // Sestavení payloadu podle role dokončovaného účtu
+    const buildPayload = (): CompleteRegistrationPayload => {
+        const payload: CompleteRegistrationPayload = {
             token,
             password,
             firstName,
             lastName,
         };
 
-        if (role === "STUDENT") payload.studentNumber = studentNumber;
-        if (role === "EXTERNAL_WORKER") payload.companyName = companyName;
+        if (role === "STUDENT") {
+            payload.studentNumber = studentNumber;
+        }
+
+        if (role === "EXTERNAL_WORKER") {
+            payload.companyName = companyName;
+        }
+
+        return payload;
+    };
+
+    // Odeslání formuláře a automatické přihlášení po dokončení registrace
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMessage("");
+        setLoading(true);
 
         try {
-            const result = await completeRegistration(payload);
+            const result = await completeRegistration(buildPayload());
 
             if (!result.success) {
                 setErrorMessage(result.message || "Chyba při dokončení registrace.");
@@ -74,9 +116,15 @@ const CompleteRegistration: React.FC = () => {
                 lastName: auth.lastName,
             });
 
-            navigate("/summary");
-        } catch {
-            setErrorMessage("Chyba komunikace se serverem.");
+            navigate("/summary", {
+                replace: true,
+                state: { fromRegistration: true },
+            });
+        } catch (err: any) {
+            setErrorMessage(
+                err?.response?.data?.message ||
+                "Tento odkaz již není platný nebo byl použit."
+            );
         } finally {
             setLoading(false);
         }
@@ -92,6 +140,7 @@ const CompleteRegistration: React.FC = () => {
             password={password}
             loading={loading}
             errorMessage={errorMessage}
+            tokenInvalid={tokenInvalid}
             setFirstName={setFirstName}
             setLastName={setLastName}
             setStudentNumber={setStudentNumber}

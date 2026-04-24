@@ -171,6 +171,10 @@ public class UserService implements UserDetailsService {
             );
         }
 
+        // Smazání starého reset tokenu pokud existuje, aby bylo možné vytvořit nový
+        tokenRepository.findByUserAndPurpose(user, Purpose.RESET_PASSWORD)
+                .ifPresent(tokenRepository::delete);
+
         String token = UUID.randomUUID().toString();
 
         VerificationToken verificationToken = new VerificationToken();
@@ -190,7 +194,7 @@ public class UserService implements UserDetailsService {
         emailService.sendPasswordResetEmail(user.getEmail(), link);
     }
 
-
+    @Transactional
     public Map<String, Object> resetPassword(String token, String newPassword) {
         Optional<VerificationToken> optional = tokenRepository.findByToken(token);
 
