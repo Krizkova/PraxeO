@@ -22,17 +22,19 @@ api.interceptors.request.use((config) => {
     return config;
 });
 
-export const getTasks = async (practiceId: number | string) => {
-    const res = await api.get(`/tasks/practice/${practiceId}`);
-    return res.data;
-};
+export type TaskStatus = "ACTIVE" | "COMPLETED";
+
+export interface TaskFounder {
+    name?: string;
+    email?: string;
+}
 
 export interface TaskDto {
     id?: number;
     title: string;
     description: string;
     authorId?: number;
-    founder?: any; // User object
+    founder?: TaskFounder; // User object
     links?: string[];
     files?: string[];
     creationDate?: string;
@@ -41,21 +43,48 @@ export interface TaskDto {
     closed: boolean;
     finalEvaluation?: string;
     evaluationAuthorName?: string;
-    status: 'ACTIVE' | 'COMPLETED';
+    status: TaskStatus;
     reportFlag: boolean;
 }
 
-export const createTask = async (practiceId: number, data: Partial<TaskDto>) => {
-    const res = await api.post(`/tasks/practice/${practiceId}`, data);
+export interface Task extends TaskDto {
+    id: number;
+}
+
+export interface TaskFormData {
+    title: string;
+    description: string;
+    links: string[];
+    files: string[];
+    expectedEndDate: string | null;
+    reportFlag: boolean;
+    finalEvaluation?: string;
+}
+
+export const getTasks = async (
+    practiceId: number | string
+): Promise<Task[]> => {
+    const res = await api.get<Task[]>(`/tasks/practice/${practiceId}`);
     return res.data;
 };
 
-export const deleteTask = async (id: number) => {
+export const createTask = async (
+    practiceId: number,
+    data: TaskFormData
+): Promise<Task> => {
+    const res = await api.post<Task>(`/tasks/practice/${practiceId}`, data);
+    return res.data;
+};
+
+export const deleteTask = async (id: number): Promise<unknown> => {
     const res = await api.delete(`/tasks/${id}`);
     return res.data;
 };
 
-export const updateTask = async (id: number, data: Partial<TaskDto>) => {
-    const res = await api.put(`/tasks/${id}`, data);
+export const updateTask = async (
+    id: number,
+    data: TaskFormData
+): Promise<Task> => {
+    const res = await api.put<Task>(`/tasks/${id}`, data);
     return res.data;
 };

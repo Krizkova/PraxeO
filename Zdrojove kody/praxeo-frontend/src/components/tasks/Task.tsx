@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { getTasks, createTask, deleteTask, updateTask } from "../../api/tasksApi";
+import axios from "axios";
+import {
+    getTasks,
+    createTask,
+    deleteTask,
+    updateTask,
+} from "../../api/tasksApi";
+import type { Task as TaskType, TaskFormData } from "../../api/tasksApi";
 import TaskView from "./TaskView";
 
 interface Props {
@@ -8,66 +15,47 @@ interface Props {
 }
 
 const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
-    const [tasks, setTasks] = useState<any[]>([]);
+    const [tasks, setTasks] = useState<TaskType[]>([]);
     const [show, setShow] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    // Načtení tasků pro konkrétní praxi
     useEffect(() => {
-        setError(null);
-
-        getTasks(practiceId)
-            .then((res) => setTasks(res || []))
-            .catch((err: any) => {
-                setError(
-                    err?.response?.data?.message || "Nepodařilo se načíst tasky."
-                );
-            });
+        getTasks(practiceId).then((res) => setTasks(res || []));
     }, [practiceId]);
 
-    const handleCreate = (data: any) => {
-        setError(null);
+    const showError = (err: unknown) => {
+        const message = axios.isAxiosError(err)
+            ? err.response?.data?.message || err.message
+            : err instanceof Error
+                ? err.message
+                : "Nastala neočekávaná chyba.";
 
+        alert("Chyba: " + message);
+    };
+
+    const handleCreate = (data: TaskFormData) => {
         createTask(practiceId, data)
             .then((res) => {
                 setTasks((prev) => [...prev, res]);
                 setShow(false);
             })
-            .catch((err: any) => {
-                setError(
-                    err?.response?.data?.message || "Nepodařilo se vytvořit task."
-                );
-            });
+            .catch(showError);
     };
 
     const handleDelete = (id: number) => {
-        setError(null);
-
         deleteTask(id)
             .then(() => {
                 setTasks((prev) => prev.filter((t) => t.id !== id));
             })
-            .catch((err: any) => {
-                setError(
-                    err?.response?.data?.message || "Nepodařilo se smazat task."
-                );
-            });
+            .catch(showError);
     };
 
-    // Aktualizace existujícího tasku
-    const handleUpdate = (id: number, data: any) => {
-        setError(null);
-
+    const handleUpdate = (id: number, data: TaskFormData) => {
         updateTask(id, data)
             .then((res) => {
-                setTasks((prev) => prev.map((t) => t.id === id ? res : t));
+                setTasks((prev) => prev.map((t) => (t.id === id ? res : t)));
                 setShow(false);
             })
-            .catch((err: any) => {
-                setError(
-                    err?.response?.data?.message || "Nepodařilo se upravit task."
-                );
-            });
+            .catch(showError);
     };
 
     return (
@@ -79,7 +67,7 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             allowCreate={allowCreate}
-            error={error}
+            error={null}
         />
     );
 };
