@@ -7,13 +7,25 @@ const Header: React.FC = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
 
+    // Odhlášení uživatele
     const handleLogout = () => {
         logout();
         navigate("/", { replace: true });
     };
 
+    // Přechod na přidání uživatele
     const handleAddUser = () => {
         navigate("/add-user");
+    };
+
+    // Klik na logo: přechod na domovskou stránku
+    const handleLogoClick = () => {
+        navigate("/");
+    };
+
+    // Přechod na přehled praxí
+    const handleSummaryClick = () => {
+        navigate("/summary");
     };
 
     return (
@@ -22,6 +34,8 @@ const Header: React.FC = () => {
             role={user?.role}
             onLogout={handleLogout}
             onAddUser={handleAddUser}
+            onLogoClick={handleLogoClick}
+            onSummaryClick={handleSummaryClick}
         />
     );
 };
