@@ -128,6 +128,7 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
         if (isAdmin) {
             payload.founderEmail = founderEmail;
             payload.studentEmail = studentEmail;
+            payload.state = practiceState;
         }
 
         return payload;

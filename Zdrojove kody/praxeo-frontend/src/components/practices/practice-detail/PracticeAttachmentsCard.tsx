@@ -4,7 +4,7 @@ import FormCard from "../../common/FormCard";
 import PrimaryButton from "../../common/PrimaryButton";
 import AttachmentItem from "./AttachmentItem";
 import { iconBoxStyle } from "../../../utils/forms/formStyles";
-import type { Attachment } from "../../types/practice";
+import {Attachment} from "../../../utils/forms/types/practice";
 
 interface Props {
     attachments: Attachment[];

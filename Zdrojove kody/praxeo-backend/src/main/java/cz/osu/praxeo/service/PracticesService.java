@@ -13,6 +13,7 @@ import cz.osu.praxeo.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,6 +29,7 @@ public class PracticesService {
     private final UserService userService;
     private final PracticesRepository practicesRepository;
 
+    @Transactional(readOnly = true)
     public List<PracticesDto> getPracticesByRole() {
 
         User user = userService.getCurrentUser();
@@ -77,6 +79,7 @@ public class PracticesService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public PracticesDto getPracticeById(Long id) {
         Practices practice = practicesRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
@@ -190,7 +193,8 @@ public class PracticesService {
             practice.setFinalEvaluation(request.getFinalEvaluation());
         } else if (isStudent && practice.getState() == PracticeState.ACTIVE) {
             practice.setStudentEvaluation(request.getStudentEvaluation());
-        } else if (isAdmin) {
+        }
+        if (isAdmin) {
             practice.setName(request.getName());
             practice.setDescription(request.getDescription());
             practice.setCompletedAt(request.getCompletedAt());
@@ -203,6 +207,9 @@ public class PracticesService {
 
             if (request.getFounderEmail() != null && !request.getFounderEmail().isBlank()) {
                 newFounder = userService.findByEmail(request.getFounderEmail());
+                if (newFounder != null && !newFounder.isActive()) {
+                    throw new RuntimeException("Zakladatel s tímto emailem neexistuje");
+                }
 
                 if (newFounder == null) {
                     throw new RuntimeException("Zakladatel s tímto emailem neexistuje");
@@ -245,7 +252,8 @@ public class PracticesService {
                     practice.setState(PracticeState.NEW);
                 }
             }
-        } else {
+        }
+        if (!isFounder && !isAdmin){
             throw new RuntimeException("Nemáte oprávnění upravovat tuto praxi");
         }
         practice.setLastModifiedAt(LocalDateTime.now());

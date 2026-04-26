@@ -37,6 +37,7 @@ export interface UpdatePracticePayload {
     name?: string;
     description?: string;
     completedAt?: string | null;
+    state?: PracticeState;
     finalEvaluation?: string;
     studentEvaluation?: string;
     founderEmail?: string;
