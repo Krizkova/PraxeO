@@ -18,7 +18,7 @@ public class TaskDto {
     private Long authorId;
     private User founder;
     private List<String> links;
-    private List<String> files;
+    private List<AttachmentDto> files;
     private LocalDateTime creationDate;
     private LocalDate expectedEndDate;
     private LocalDate actualEndDate;

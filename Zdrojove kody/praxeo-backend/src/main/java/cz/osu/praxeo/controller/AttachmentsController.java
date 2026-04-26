@@ -28,15 +28,22 @@ public class AttachmentsController {
         return ResponseEntity.ok(list);
     }
 
+    @GetMapping("/by-task/{id}")
+    public ResponseEntity<?> getAttachmentsByTask(@PathVariable Long id) {
+        List<AttachmentDto> list = attachmentService.getAttachmentsForTask(id);
+        return ResponseEntity.ok(list);
+    }
+
     @PostMapping("/upload/{practiceDetailId}")
     public ResponseEntity<?> upload(@PathVariable Long practiceDetailId,
+                                    @RequestParam(value = "taskId", required = false) Long taskId,
                                     @RequestParam("file") MultipartFile file) throws IOException {
 
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body("Soubor nesmí být prázdný");
         }
 
-        AttachmentDto dto = attachmentService.uploadAttachment(practiceDetailId, file);
+        AttachmentDto dto = attachmentService.uploadAttachment(practiceDetailId, taskId, file);
         return ResponseEntity.ok(dto);
     }
 

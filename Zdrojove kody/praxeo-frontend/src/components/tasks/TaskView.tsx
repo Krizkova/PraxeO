@@ -3,25 +3,30 @@ import { CheckSquare, Plus, CircleAlert } from "lucide-react";
 import TaskList from "./TaskList";
 import TaskModal from "./TaskModal";
 import type { Task, TaskFormData } from "../../api/tasksApi";
+import { uploadTaskAttachment } from "../../api/tasksApi";
 
 interface Props {
+    practiceId: number;
     tasks: Task[];
     show: boolean;
     setShow: React.Dispatch<React.SetStateAction<boolean>>;
-    onCreate: (data: TaskFormData) => void;
-    onUpdate: (id: number, data: TaskFormData) => void;
+    onCreate: (data: TaskFormData) => Promise<Task | void>;
+    onUpdate: (id: number, data: TaskFormData) => Promise<Task | void>;
     onDelete: (id: number) => void;
+    onRefresh?: () => void;
     allowCreate: boolean;
     error: string | null;
 }
 
 const TaskView: React.FC<Props> = ({
+                                       practiceId,
                                        tasks,
                                        show,
                                        setShow,
                                        onCreate,
                                        onUpdate,
                                        onDelete,
+                                       onRefresh,
                                        allowCreate,
                                        error,
                                    }) => {
@@ -75,7 +80,7 @@ const TaskView: React.FC<Props> = ({
         setTitle(task.title || "");
         setDescription(task.description || "");
         setLinkItems(task.links?.length ? task.links : [""]);
-        setSelectedFiles(task.files?.map((name) => ({ name } as File)) || []);
+        setSelectedFiles([]); // Start with empty selection for new uploads
         setExpectedEndDate(task.expectedEndDate ? task.expectedEndDate.split("T")[0] : "");
         setReportFlag(!!task.reportFlag);
         setFinalEvaluation(task.finalEvaluation || "");
@@ -124,28 +129,46 @@ const TaskView: React.FC<Props> = ({
     };
 
     // Uložení
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         setShowErrors(true);
         if (!canSubmit) return;
 
         const data: TaskFormData = {
+            files: [],
             title,
             description,
             links: linkItems.map((link) => link.trim()).filter((link) => link !== ""),
-            files: selectedFiles.map((file) => file.name),
             expectedEndDate: expectedEndDate === "" ? null : expectedEndDate,
             reportFlag,
             finalEvaluation:
-                editingTask && finalEvaluation.trim() ? finalEvaluation : undefined,
+                editingTask && finalEvaluation.trim() ? finalEvaluation : undefined
         };
 
+        let savedTask: Task | void;
         if (editingTask) {
-            onUpdate(editingTask.id, data);
-            resetForm();
+            savedTask = await onUpdate(editingTask.id, data);
         } else {
-            onCreate(data);
-            resetForm();
+            savedTask = await onCreate(data);
         }
+
+        // Upload new files
+        if (selectedFiles.length > 0 && savedTask && savedTask.id) {
+            for (const file of selectedFiles) {
+                if (file instanceof File) {
+                    try {
+                        await uploadTaskAttachment(practiceId, savedTask.id, file);
+                    } catch (error) {
+                        console.error("Chyba při nahrávání souboru:", error);
+                    }
+                }
+            }
+        }
+
+        if (onRefresh) {
+            onRefresh();
+        }
+
+        resetForm();
     };
 
     const iconBoxStyle: React.CSSProperties = {

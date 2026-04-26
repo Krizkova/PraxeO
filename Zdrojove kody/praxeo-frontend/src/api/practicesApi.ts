@@ -1,6 +1,6 @@
 import axios from "axios";
 import Cookies from "js-cookie";
-import type { Attachment, Practice, UpdatePracticePayload, PracticeState } from "../types/practice";
+import type { Attachment, Practice, UpdatePracticePayload, PracticeState } from "../utils/forms/types/practice";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -64,13 +64,19 @@ export const getAttachmentsForPractice = async (
 
 export const uploadAttachment = async (
     practiceId: string | number,
-    file: File
+    file: File,
+    taskId?: string | number
 ): Promise<Attachment> => {
     const formData = new FormData();
     formData.append("file", file);
 
+    const url = new URL(`${API}/attachments/upload/${practiceId}`);
+    if (taskId) {
+        url.searchParams.append("taskId", taskId.toString());
+    }
+
     const response = await api.post<Attachment>(
-        `/attachments/upload/${practiceId}`,
+        url.toString(),
         formData,
         {
             headers: {

@@ -10,4 +10,6 @@ import java.util.List;
 public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
 
     List<Attachment> findByPracticeId(Long practiceId);
+
+    List<Attachment> findByTaskId(Long taskId);
 }

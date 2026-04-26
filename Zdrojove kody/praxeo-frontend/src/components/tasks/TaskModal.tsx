@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CheckSquare, X } from "lucide-react";
+import { CheckSquare, X, Download, Trash2, FileText } from "lucide-react";
 import {
     inputStyle,
     textareaStyle,
@@ -13,6 +13,7 @@ import {
     clearFocusStyle,
 } from "../../utils/forms/formHelpers";
 import type { Task } from "../../api/tasksApi";
+import { downloadAttachment, deleteAttachment } from "../../api/practicesApi";
 
 interface Props {
     show: boolean;
@@ -91,6 +92,34 @@ const TaskModal: React.FC<Props> = ({
     const handleClose = () => {
         setShowErrors(false);
         resetForm();
+    };
+
+    const handleDownload = async (id: number, title: string) => {
+        try {
+            const response = await downloadAttachment(id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", title);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Chyba při stahování souboru:", error);
+            alert("Soubor se nepodařilo stáhnout.");
+        }
+    };
+
+    const handleDeleteAttachment = async (id: number) => {
+        if (window.confirm("Opravdu chcete smazat tento soubor?")) {
+            try {
+                await deleteAttachment(id);
+                window.location.reload();
+            } catch (error) {
+                console.error("Chyba při mazání souboru:", error);
+                alert("Soubor se nepodařilo smazat.");
+            }
+        }
     };
 
     // Kliknutí na uložení vždy spustí validaci
@@ -303,6 +332,94 @@ const TaskModal: React.FC<Props> = ({
                     <div style={{ marginBottom: 16 }}>
                         <label style={labelStyle}>Soubory</label>
 
+                        {/* Stávající přílohy ze serveru */}
+                        {editingTask?.files && editingTask.files.length > 0 && (
+                            <div
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 8,
+                                    marginBottom: 12,
+                                }}
+                            >
+                                {editingTask.files.map((attachment) => (
+                                    <div
+                                        key={attachment.id}
+                                        style={{
+                                            background: "#f6faf6",
+                                            border: "1px solid #e0ede0",
+                                            borderRadius: 10,
+                                            padding: "9px 12px",
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <span
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                                fontSize: 13,
+                                                color: "#2c4a2c",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                                whiteSpace: "nowrap",
+                                                flex: 1,
+                                            }}
+                                        >
+                                            <FileText size={14} style={{ flexShrink: 0 }} />
+                                            {attachment.title}
+                                        </span>
+
+                                        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownload(attachment.id, attachment.title)}
+                                                style={{
+                                                    background: "#e3f2fd",
+                                                    border: "none",
+                                                    borderRadius: 8,
+                                                    width: 28,
+                                                    height: 28,
+                                                    cursor: "pointer",
+                                                    color: "#1565c0",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                                title="Stáhnout"
+                                            >
+                                                <Download size={14} />
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteAttachment(attachment.id)}
+                                                style={{
+                                                    background: "#fce4ec",
+                                                    border: "none",
+                                                    borderRadius: 8,
+                                                    width: 28,
+                                                    height: 28,
+                                                    cursor: "pointer",
+                                                    color: "#c62828",
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "center",
+                                                }}
+                                                title="Smazat"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {/* Nově vybrané soubory k nahrání */}
                         {selectedFiles.length > 0 && (
                             <div
                                 style={{

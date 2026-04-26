@@ -37,10 +37,6 @@ public class Task {
     @Column(name = "link")
     private List<String> links = new ArrayList<>();
 
-    @ElementCollection
-    @CollectionTable(name = "task_files", joinColumns = @JoinColumn(name = "task_id"))
-    @Column(name = "file_path")
-    private List<String> files = new ArrayList<>();
 
     private LocalDateTime creationDate;
     private LocalDate expectedEndDate; // Can be null

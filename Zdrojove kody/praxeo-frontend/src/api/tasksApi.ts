@@ -1,6 +1,8 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
+import type { Attachment } from "../utils/forms/types/practice";
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
 axios.defaults.withCredentials = true;
@@ -36,7 +38,7 @@ export interface TaskDto {
     authorId?: number;
     founder?: TaskFounder; // User object
     links?: string[];
-    files?: string[];
+    files?: Attachment[];
     creationDate?: string;
     expectedEndDate?: string | null;
     actualEndDate?: string | null;
@@ -55,7 +57,7 @@ export interface TaskFormData {
     title: string;
     description: string;
     links: string[];
-    files: string[];
+    files: File[];
     expectedEndDate: string | null;
     reportFlag: boolean;
     finalEvaluation?: string;
@@ -87,4 +89,36 @@ export const updateTask = async (
 ): Promise<Task> => {
     const res = await api.put<Task>(`/tasks/${id}`, data);
     return res.data;
+};
+
+export const getAttachmentsForTask = async (
+    taskId: string | number
+): Promise<Attachment[]> => {
+    const response = await api.get<Attachment[]>(
+        `/attachments/by-task/${taskId}`
+    );
+
+    return response.data;
+};
+
+export const uploadTaskAttachment = async (
+    practiceId: string | number,
+    taskId: string | number,
+    file: File
+): Promise<Attachment> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post<Attachment>(
+        `/attachments/upload/${practiceId}`,
+        formData,
+        {
+            params: { taskId },
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        }
+    );
+
+    return response.data;
 };

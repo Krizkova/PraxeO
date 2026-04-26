@@ -32,13 +32,31 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
         alert("Chyba: " + message);
     };
 
-    const handleCreate = (data: TaskFormData) => {
-        createTask(practiceId, data)
-            .then((res) => {
-                setTasks((prev) => [...prev, res]);
-                setShow(false);
-            })
-            .catch(showError);
+    const handleCreate = async (data: TaskFormData) => {
+        try {
+            const res = await createTask(practiceId, data);
+            // Refresh tasks to get the ones with updated files after upload completes in TaskView
+            // Actually TaskView calls uploadTaskAttachment AFTER onCreate returns.
+            // So we need to return the task but might need another refresh.
+            setTasks((prev) => [...prev, res]);
+            setShow(false);
+            return res;
+        } catch (err) {
+            showError(err);
+            throw err;
+        }
+    };
+
+    const handleUpdate = async (id: number, data: TaskFormData) => {
+        try {
+            const res = await updateTask(id, data);
+            setTasks((prev) => prev.map((t) => (t.id === id ? res : t)));
+            setShow(false);
+            return res;
+        } catch (err) {
+            showError(err);
+            throw err;
+        }
     };
 
     const handleDelete = (id: number) => {
@@ -49,23 +67,20 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
             .catch(showError);
     };
 
-    const handleUpdate = (id: number, data: TaskFormData) => {
-        updateTask(id, data)
-            .then((res) => {
-                setTasks((prev) => prev.map((t) => (t.id === id ? res : t)));
-                setShow(false);
-            })
-            .catch(showError);
+    const refreshTasks = () => {
+        getTasks(practiceId).then((res) => setTasks(res || []));
     };
 
     return (
         <TaskView
+            practiceId={practiceId}
             tasks={tasks}
             show={show}
             setShow={setShow}
             onCreate={handleCreate}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            onRefresh={refreshTasks}
             allowCreate={allowCreate}
             error={null}
         />

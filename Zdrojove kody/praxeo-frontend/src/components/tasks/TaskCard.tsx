@@ -1,6 +1,7 @@
 import React from "react";
-import { Trash2, Pencil, Link, Calendar, Star } from "lucide-react";
+import { Trash2, Pencil, Link, Calendar, Star, Download, FileText } from "lucide-react";
 import type { Task } from "../../api/tasksApi";
+import { downloadAttachment, deleteAttachment } from "../../api/practicesApi";
 
 interface Props {
     task: Task;
@@ -17,6 +18,34 @@ const formatDate = (value?: string | null) => {
 };
 
 const TaskCard: React.FC<Props> = ({ task, allowCreate, onEdit, onDelete }) => {
+    const handleDownload = async (id: number, title: string) => {
+        try {
+            const response = await downloadAttachment(id);
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", title);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Chyba při stahování souboru:", error);
+            alert("Soubor se nepodařilo stáhnout.");
+        }
+    };
+
+    const handleDeleteAttachment = async (id: number) => {
+        if (window.confirm("Opravdu chcete smazat tento soubor?")) {
+            try {
+                await deleteAttachment(id);
+                window.location.reload();
+            } catch (error) {
+                console.error("Chyba při mazání souboru:", error);
+                alert("Soubor se nepodařilo smazat.");
+            }
+        }
+    };
+
     return (
         <div
             style={{
@@ -215,7 +244,7 @@ const TaskCard: React.FC<Props> = ({ task, allowCreate, onEdit, onDelete }) => {
             )}
 
             {/* Odkazy a soubory */}
-            {(task.links?.length > 0 || task.files?.length > 0) && (
+            {((task.links && task.links.length > 0) || (task.files && task.files.length > 0)) && (
                 <div
                     style={{
                         fontSize: 12,
@@ -254,19 +283,55 @@ const TaskCard: React.FC<Props> = ({ task, allowCreate, onEdit, onDelete }) => {
                             }}
                         >
                             <strong style={{ color: "#3a5a3a" }}>Soubory:</strong>
-                            {task.files.map((file, index) => (
-                                <span
-                                    key={`${file}-${index}`}
+                            {task.files.map((attachment) => (
+                                <div
+                                    key={attachment.id}
                                     style={{
                                         background: "#f6faf6",
                                         border: "1px solid #d0e8d0",
                                         borderRadius: 6,
                                         padding: "2px 8px",
                                         color: "#3a5a3a",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 6,
                                     }}
                                 >
-                                    {file}
-                                </span>
+                                    <FileText size={12} />
+                                    <span>{attachment.title}</span>
+                                    <button
+                                        onClick={() => handleDownload(attachment.id, attachment.title)}
+                                        style={{
+                                            background: "none",
+                                            border: "none",
+                                            padding: 0,
+                                            cursor: "pointer",
+                                            color: "#1565c0",
+                                            display: "flex",
+                                            alignItems: "center",
+                                        }}
+                                        title="Stáhnout"
+                                    >
+                                        <Download size={12} />
+                                    </button>
+                                    {allowCreate && task.status !== "COMPLETED" && (
+                                        <button
+                                            onClick={() => handleDeleteAttachment(attachment.id)}
+                                            style={{
+                                                background: "none",
+                                                border: "none",
+                                                padding: 0,
+                                                cursor: "pointer",
+                                                color: "#c62828",
+                                                display: "flex",
+                                                alignItems: "center",
+                                            }}
+                                            title="Smazat"
+                                        >
+                                            <Trash2 size={12} />
+                                        </button>
+                                    )}
+                                </div>
                             ))}
                         </div>
                     )}

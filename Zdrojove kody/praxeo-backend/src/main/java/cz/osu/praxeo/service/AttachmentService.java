@@ -3,6 +3,7 @@ package cz.osu.praxeo.service;
 import cz.osu.praxeo.dao.AttachmentDataRepository;
 import cz.osu.praxeo.dao.AttachmentRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
+import cz.osu.praxeo.dao.TaskRepository;
 import cz.osu.praxeo.dto.AttachmentDto;
 import cz.osu.praxeo.entity.Attachment;
 import cz.osu.praxeo.entity.AttachmentData;
@@ -25,6 +26,7 @@ public class AttachmentService {
     private final AttachmentDataRepository attachmentDataRepository;
     private final AttachmentMapper attachmentMapper;
     private final PracticesRepository practicesRepository;
+    private final TaskRepository taskRepository;
     private final UserService userService;
 
     @Transactional(readOnly = true)
@@ -35,14 +37,29 @@ public class AttachmentService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<AttachmentDto> getAttachmentsForTask(Long taskId) {
+        return attachmentRepository.findByTaskId(taskId)
+                .stream()
+                .map(attachmentMapper::toDto)
+                .toList();
+    }
+
     @Transactional
-    public AttachmentDto uploadAttachment(Long practiceId, MultipartFile file) throws IOException {
+    public AttachmentDto uploadAttachment(Long practiceId, Long taskId, MultipartFile file) throws IOException {
         Practices practice = practicesRepository.findById(practiceId)
-                .orElseThrow(() -> new RuntimeException("Practice not found"));
+                .orElseThrow(() -> new RuntimeException("Praxe nenalezena"));
 
         User user = userService.getCurrentUser();
         Attachment attachment = new Attachment();
         attachment.setPractice(practice);
+
+        if (taskId != null) {
+                cz.osu.praxeo.entity.Task task = taskRepository.findById(taskId)
+                    .orElseThrow(() -> new RuntimeException("Task nenalezen"));
+            attachment.setTask(task);
+        }
+
         attachment.setUploadedBy(user);
         attachment.setTitle(file.getOriginalFilename());
         attachment.setFileType(file.getContentType());
@@ -69,6 +86,7 @@ public class AttachmentService {
 
 
 
+    @Transactional
     public boolean deleteAttachment(Long id) {
         if (!attachmentRepository.existsById(id)) return false;
         attachmentRepository.deleteById(id);
