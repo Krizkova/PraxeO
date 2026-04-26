@@ -3,6 +3,7 @@ package cz.osu.praxeo.service;
 import cz.osu.praxeo.dao.AttachmentDataRepository;
 import cz.osu.praxeo.dao.AttachmentRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
+import cz.osu.praxeo.dao.TaskRepository;
 import cz.osu.praxeo.dto.AttachmentDto;
 import cz.osu.praxeo.entity.*;
 import cz.osu.praxeo.mapper.AttachmentMapper;
@@ -38,6 +39,9 @@ class AttachmentServiceTest {
     private PracticesRepository practicesRepository;
 
     @Mock
+    private TaskRepository taskRepository;
+
+    @Mock
     private UserService userService;
 
     private AttachmentMapper attachmentMapper;
@@ -52,6 +56,7 @@ class AttachmentServiceTest {
                 attachmentDataRepository,
                 attachmentMapper,
                 practicesRepository,
+                taskRepository,
                 userService
         );
     }
@@ -138,7 +143,7 @@ class AttachmentServiceTest {
         when(userService.getCurrentUser()).thenReturn(user);
         when(attachmentRepository.save(any(Attachment.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        AttachmentDto result = attachmentService.uploadAttachment(1L, file);
+        AttachmentDto result = attachmentService.uploadAttachment(1L, null, file);
 
         assertNotNull(result);
         assertEquals("report.pdf", result.getTitle());
@@ -162,7 +167,7 @@ class AttachmentServiceTest {
         when(userService.getCurrentUser()).thenReturn(user);
         when(attachmentRepository.save(any(Attachment.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        attachmentService.uploadAttachment(1L, file);
+        attachmentService.uploadAttachment(1L, null, file);
 
         ArgumentCaptor<Attachment> captor = ArgumentCaptor.forClass(Attachment.class);
         verify(attachmentRepository).save(captor.capture());
@@ -184,9 +189,35 @@ class AttachmentServiceTest {
         );
         when(practicesRepository.findById(999L)).thenReturn(Optional.empty());
 
-        assertThrows(RuntimeException.class, () -> attachmentService.uploadAttachment(999L, file));
+        assertThrows(RuntimeException.class, () -> attachmentService.uploadAttachment(999L, null, file));
         verify(attachmentRepository, never()).save(any());
         verify(attachmentDataRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("uploadAttachment – s taskId, uloží attachment k tasku")
+    void uploadAttachment_withTaskId_savesToTask() throws IOException {
+        MultipartFile file = new MockMultipartFile(
+                "file", "task-file.txt", "text/plain", "content".getBytes()
+        );
+        Practices practice = makePractice(1L);
+        cz.osu.praxeo.entity.Task task = new cz.osu.praxeo.entity.Task();
+        task.setId(10L);
+        User user = makeUser(1L, "user@osu.cz");
+
+        when(practicesRepository.findById(1L)).thenReturn(Optional.of(practice));
+        when(taskRepository.findById(10L)).thenReturn(Optional.of(task));
+        when(userService.getCurrentUser()).thenReturn(user);
+        when(attachmentRepository.save(any(Attachment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        attachmentService.uploadAttachment(1L, 10L, file);
+
+        ArgumentCaptor<Attachment> captor = ArgumentCaptor.forClass(Attachment.class);
+        verify(attachmentRepository).save(captor.capture());
+        Attachment saved = captor.getValue();
+
+        assertEquals(task, saved.getTask());
+        assertEquals(practice, saved.getPractice());
     }
 
     //  getFileData

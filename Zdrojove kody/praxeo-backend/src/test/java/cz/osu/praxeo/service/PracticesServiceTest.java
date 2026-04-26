@@ -1,8 +1,10 @@
 package cz.osu.praxeo.service;
 
+import cz.osu.praxeo.dao.AttachmentRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
 import cz.osu.praxeo.dto.PracticesDto;
 import cz.osu.praxeo.entity.*;
+import cz.osu.praxeo.mapper.AttachmentMapper;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import cz.osu.praxeo.mapper.TaskMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +38,9 @@ class PracticesServiceTest {
 
     @BeforeEach
     void setUp() {
-        TaskMapper taskMapper = new TaskMapper();
+        AttachmentRepository attachmentRepository = mock(AttachmentRepository.class);
+        AttachmentMapper attachmentMapper = new AttachmentMapper();
+        TaskMapper taskMapper = new TaskMapper(attachmentMapper, attachmentRepository);
         practicesMapper = new PracticesMapper(taskMapper);
         practicesService = new PracticesService(practicesMapper, userService, practicesRepository);
     }

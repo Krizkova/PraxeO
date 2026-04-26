@@ -253,7 +253,11 @@ public class PracticesService {
                 }
             }
         }
-        if (!isFounder && !isAdmin){
+        if (isStudent && practice.getState() == PracticeState.SUBMITTED) {
+            throw new RuntimeException("Nemáte oprávnění upravovat tuto praxi");
+        }
+
+        if (!isFounder && !isAdmin && !isStudent){
             throw new RuntimeException("Nemáte oprávnění upravovat tuto praxi");
         }
         practice.setLastModifiedAt(LocalDateTime.now());

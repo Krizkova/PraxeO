@@ -74,13 +74,13 @@ class AttachmentsControllerTest {
     @Test
     void upload_validFile_returnsOkWithDto() throws Exception {
         AttachmentDto dto = new AttachmentDto(1L, "test.txt", null, "text/plain", 5L, 10L);
-        when(attachmentService.uploadAttachment(456L, testFile)).thenReturn(dto);
+        when(attachmentService.uploadAttachment(456L, null, testFile)).thenReturn(dto);
 
-        ResponseEntity<?> response = controller.upload(456L, testFile);
+        ResponseEntity<?> response = controller.upload(456L, null, testFile);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(dto, response.getBody());
-        verify(attachmentService).uploadAttachment(456L, testFile);
+        verify(attachmentService).uploadAttachment(456L, null, testFile);
     }
 
     @DisplayName("upload – prázdný soubor")
@@ -90,7 +90,7 @@ class AttachmentsControllerTest {
                 "file", "", "text/plain", new byte[0]
         );
 
-        ResponseEntity<?> response = controller.upload(456L, emptyFile);
+        ResponseEntity<?> response = controller.upload(456L, null, emptyFile);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Soubor nesmí být prázdný", response.getBody());
@@ -100,7 +100,7 @@ class AttachmentsControllerTest {
     @DisplayName("upload – null soubor")
     @Test
     void upload_nullFile_returnsBadRequest() throws Exception {
-        ResponseEntity<?> response = controller.upload(456L, null);
+        ResponseEntity<?> response = controller.upload(456L, null, null);
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Soubor nesmí být prázdný", response.getBody());
