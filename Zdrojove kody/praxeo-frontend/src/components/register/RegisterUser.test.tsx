@@ -12,6 +12,12 @@ type RegisterUserViewProps = {
     isAdminOrTeacher: boolean;
     roleSelect: string;
     onRoleChange: (role: string) => void;
+    emailError?: string;
+    generalError?: string;
+    successMessage?: string;
+    loading?: boolean;
+    sent: boolean;
+    onAddAnotherUser: () => void;
 };
 
 const { mockNavigate, getLatestProps, setLatestProps } = vi.hoisted(() => {
@@ -87,7 +93,8 @@ describe("RegisterUser", () => {
             email: "new@osu.cz",
             role: "EXTERNAL_WORKER",
         });
-        expect(screen.getByText(/pozvánka odeslána|pozvĂˇnka odeslĂˇna/i)).toBeInTheDocument();
+        expect(latestProps().sent).toBe(true);
+        expect(latestProps().successMessage).toContain("Odkaz pro dokončení registrace");
         expect(mockNavigate).not.toHaveBeenCalledWith("/");
     });
 
@@ -112,7 +119,8 @@ describe("RegisterUser", () => {
             email: "student@osu.cz",
             role: "STUDENT",
         });
-        expect(screen.getByText(/zkontrolujte e-mail/i)).toBeInTheDocument();
+        expect(latestProps().sent).toBe(true);
+        expect(latestProps().successMessage).toContain("Zkontrolujte prosím svou schránku");
         expect(mockNavigate).not.toHaveBeenCalledWith("/");
     });
 });
