@@ -1,12 +1,26 @@
 ﻿import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import PracticeDetailView from "../PracticeDetailView";
+import PracticeDetailView from "./PracticeDetailView";
 
 const taskMock = vi.fn(() => <div data-testid="task-component">Task</div>);
+const { setMockUserRole, getMockUserRole } = vi.hoisted(() => {
+    let mockUserRole = "TEACHER";
 
-vi.mock("../tasks/Task", () => ({
+    return {
+        setMockUserRole: (role: string) => {
+            mockUserRole = role;
+        },
+        getMockUserRole: () => mockUserRole,
+    };
+});
+
+vi.mock("../../tasks/Task", () => ({
     default: (props: { practiceId: number; allowCreate: boolean }) => taskMock(props),
+}));
+
+vi.mock("../../../utils/forms/cookies", () => ({
+    getCookie: () => getMockUserRole(),
 }));
 
 const basePractice = {
@@ -37,6 +51,7 @@ const createProps = (overrides: Partial<any> = {}) => ({
     canEditFinalEvaluation: false,
     canChangeState: true,
     canUpload: false,
+    canDeleteAttachment: false,
     onUpdate: vi.fn(),
     onFileUpload: vi.fn(),
     onDeleteAttachment: vi.fn(),
@@ -48,8 +63,7 @@ const createProps = (overrides: Partial<any> = {}) => ({
 });
 
 const setUserRole = (role: string) => {
-    document.cookie = "userRole=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
-    document.cookie = `userRole=${role}; path=/`;
+    setMockUserRole(role);
 };
 
 describe("PracticeDetailView", () => {
@@ -103,7 +117,7 @@ describe("PracticeDetailView", () => {
 
         render(<PracticeDetailView {...props} />);
 
-        fireEvent.click(screen.getByRole("button", { name: /praxi/i }));
+        fireEvent.click(screen.getByRole("button", { name: /přihlásit se k praxi/i }));
         expect(props.onAssignStudent).toHaveBeenCalledWith(true);
     });
 
@@ -133,6 +147,7 @@ describe("PracticeDetailView", () => {
         const props = createProps({
             canEdit: false,
             canChangeState: false,
+            canEditStudent: true,
             practice: {
                 ...basePractice,
                 state: "SUBMITTED",
@@ -149,9 +164,9 @@ describe("PracticeDetailView", () => {
         setUserRole("ADMIN");
         const props = createProps({
             editMode: true,
-            canEditFounder: false,
-            canEditStudent: false,
-            canEditFinalEvaluation: false,
+            canEditFounder: true,
+            canEditStudent: true,
+            canEditFinalEvaluation: true,
             practice: {
                 ...basePractice,
                 finalEvaluation: "Stará final",

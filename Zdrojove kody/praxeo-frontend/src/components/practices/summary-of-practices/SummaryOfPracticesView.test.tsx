@@ -1,13 +1,13 @@
 ﻿import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import SummaryOfPracticesView from "../SummaryOfPracticesView";
+import SummaryOfPracticesView from "./SummaryOfPracticesView";
 
 const practices = [
     {
         id: 2,
         name: "B-practice",
-        state: "IN_PROGRESS",
+        state: "ACTIVE",
         founderEmail: "b@osu.cz",
         studentEmail: "student2@osu.cz",
         selectedAt: "2026-01-03",
@@ -16,7 +16,7 @@ const practices = [
     {
         id: 1,
         name: "A-practice",
-        state: "CREATED",
+        state: "NEW",
         founderEmail: "a@osu.cz",
         studentEmail: "student1@osu.cz",
         selectedAt: "2026-01-02",

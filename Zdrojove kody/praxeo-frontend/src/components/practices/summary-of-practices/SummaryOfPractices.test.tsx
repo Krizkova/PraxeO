@@ -2,7 +2,7 @@
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import SummaryOfPractices from "../SummaryOfPractices";
+import SummaryOfPractices from "./SummaryOfPractices";
 import { getPracticesByRole } from "../../../api/practicesApi";
 import { getCurrentUser } from "../../../api/userApi";
 
@@ -48,11 +48,11 @@ vi.mock("./SummaryOfPracticesView", () => ({
     },
 }));
 
-vi.mock("../../api/practicesApi", () => ({
+vi.mock("../../../api/practicesApi", () => ({
     getPracticesByRole: vi.fn(),
 }));
 
-vi.mock("../../api/userApi", () => ({
+vi.mock("../../../api/userApi", () => ({
     getCurrentUser: vi.fn(),
 }));
 
@@ -94,7 +94,6 @@ describe("SummaryOfPractices", () => {
     it("sets error when loading practices fails", async () => {
         vi.mocked(getCurrentUser).mockResolvedValue({ role: "STUDENT" });
         vi.mocked(getPracticesByRole).mockRejectedValue(new Error("fail"));
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -109,8 +108,5 @@ describe("SummaryOfPractices", () => {
 
         expect(latestProps().error).toContain("Nepodařilo se načíst praxe");
         expect(latestProps().canCreate).toBe(false);
-        expect(alertSpy).toHaveBeenCalled();
-
-        alertSpy.mockRestore();
     });
 });

@@ -2,7 +2,7 @@
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import PracticeDetail from "../PracticeDetail";
+import PracticeDetail from "./PracticeDetail";
 import {
     changePracticeState,
     deleteAttachment,
@@ -66,7 +66,7 @@ vi.mock("./PracticeDetailView", () => ({
     },
 }));
 
-vi.mock("../../api/practicesApi", () => ({
+vi.mock("../../../api/practicesApi", () => ({
     getPractice: vi.fn(),
     getAttachmentsForPractice: vi.fn(),
     uploadAttachment: vi.fn(),
