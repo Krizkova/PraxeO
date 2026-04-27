@@ -17,7 +17,7 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
-vi.mock("./Login", () => ({
+vi.mock("./useLogin", () => ({
     useLogin: mockUseLogin,
 }));
 
@@ -33,6 +33,8 @@ describe("LoginView", () => {
             setEmail,
             password: "",
             setPassword,
+            error: "",
+            setError: vi.fn(),
             handleLogin,
         });
     });
@@ -58,6 +60,8 @@ describe("LoginView", () => {
             setEmail,
             password: "tajneheslo",
             setPassword,
+            error: "",
+            setError: vi.fn(),
             handleLogin,
         });
 
@@ -87,7 +91,7 @@ describe("LoginView", () => {
 
         fireEvent.focus(emailInput);
         expect((emailInput as HTMLInputElement).style.border).not.toBe(initialBorder);
-        expect((emailInput as HTMLInputElement).style.boxShadow).toContain("rgba(31,138,77,0.1)");
+        expect((emailInput as HTMLInputElement).style.boxShadow).toContain("rgba(45,122,45,0.1)");
 
         fireEvent.blur(emailInput);
         expect((emailInput as HTMLInputElement).style.boxShadow).toBe("none");

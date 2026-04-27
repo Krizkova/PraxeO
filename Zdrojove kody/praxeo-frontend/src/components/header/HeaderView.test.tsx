@@ -15,7 +15,8 @@ describe("HeaderView", () => {
 
         expect(screen.getByText("uzivatel@osu.cz")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: /odhl/i })).toBeInTheDocument();
-        expect(screen.getAllByRole("button")).toHaveLength(2);
+        expect(screen.getByRole("button", { name: /přehled praxí/i })).toBeInTheDocument();
+        expect(screen.getAllByRole("button")).toHaveLength(3);
     });
 
     it("renders add-user button for admin", () => {
@@ -25,7 +26,8 @@ describe("HeaderView", () => {
             </MemoryRouter>
         );
 
-        expect(screen.getAllByRole("button")).toHaveLength(3);
+        expect(screen.getByRole("button", { name: /přidat uživatele/i })).toBeInTheDocument();
+        expect(screen.getAllByRole("button")).toHaveLength(4);
     });
 
     it("calls onLogout when logout is clicked", async () => {

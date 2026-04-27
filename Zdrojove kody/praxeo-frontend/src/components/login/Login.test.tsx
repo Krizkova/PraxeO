@@ -2,12 +2,12 @@
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { useLogin } from "./Login";
+import { useLogin } from "./useLogin";
 import { loginUser } from "../../api/userApi";
-import Cookies from "js-cookie";
 
-const { mockNavigate } = vi.hoisted(() => ({
+const { mockNavigate, mockAuthLogin } = vi.hoisted(() => ({
     mockNavigate: vi.fn(),
+    mockAuthLogin: vi.fn(),
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -22,10 +22,10 @@ vi.mock("../../api/userApi", () => ({
     loginUser: vi.fn(),
 }));
 
-vi.mock("js-cookie", () => ({
-    default: {
-        set: vi.fn(),
-    },
+vi.mock("../../context/AuthContext", () => ({
+    useAuth: () => ({
+        login: mockAuthLogin,
+    }),
 }));
 
 describe("useLogin", () => {
@@ -37,7 +37,7 @@ describe("useLogin", () => {
         vi.clearAllMocks();
     });
 
-    it("logs user in, stores cookies and navigates to summary", async () => {
+    it("logs user in through auth context and navigates to summary", async () => {
         vi.mocked(loginUser).mockResolvedValue({
             token: "token123",
             email: "student@osu.cz",
@@ -59,16 +59,17 @@ describe("useLogin", () => {
 
         expect(preventDefault).toHaveBeenCalledTimes(1);
         expect(loginUser).toHaveBeenCalledWith("student@osu.cz", "tajneheslo");
-        expect(Cookies.set).toHaveBeenCalledWith("token", "token123", { expires: 1, path: "/" });
-        expect(Cookies.set).toHaveBeenCalledWith("userEmail", "student@osu.cz");
-        expect(Cookies.set).toHaveBeenCalledWith("userRole", "STUDENT");
-        expect(Cookies.set).toHaveBeenCalledWith("userName", "Jan");
+        expect(mockAuthLogin).toHaveBeenCalledWith("token123", {
+            email: "student@osu.cz",
+            role: "STUDENT",
+            firstName: "Jan",
+            lastName: undefined,
+        });
         expect(mockNavigate).toHaveBeenCalledWith("/summary");
     });
 
-    it("shows alert on login error", async () => {
-        vi.mocked(loginUser).mockRejectedValue(new Error("Neplatné údaje"));
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
+    it("sets unauthorized error message on invalid credentials", async () => {
+        vi.mocked(loginUser).mockRejectedValue({ response: { status: 401 } });
 
         const { result } = renderHook(() => useLogin(), { wrapper });
 
@@ -83,16 +84,13 @@ describe("useLogin", () => {
         });
 
         expect(preventDefault).toHaveBeenCalledTimes(1);
-        expect(alertSpy).toHaveBeenCalledWith("Neplatné údaje");
+        expect(result.current.error).toContain("Nesprávný e-mail nebo heslo");
         expect(mockNavigate).not.toHaveBeenCalled();
-        expect(Cookies.set).not.toHaveBeenCalled();
-
-        alertSpy.mockRestore();
+        expect(mockAuthLogin).not.toHaveBeenCalled();
     });
 
-    it("shows fallback alert message when error has no message", async () => {
+    it("sets fallback error message when error has no known status", async () => {
         vi.mocked(loginUser).mockRejectedValue({});
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         const { result } = renderHook(() => useLogin(), { wrapper });
 
@@ -105,9 +103,7 @@ describe("useLogin", () => {
             await result.current.handleLogin({ preventDefault: vi.fn() } as any);
         });
 
-        expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("Chyba"));
+        expect(result.current.error).toContain("Nastala chyba při přihlášení");
         expect(mockNavigate).not.toHaveBeenCalled();
-
-        alertSpy.mockRestore();
     });
 });
