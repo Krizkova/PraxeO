@@ -3,24 +3,26 @@ import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ResetPassword from "./ResetPassword";
-import { loginUser, resetPassword } from "../../api/userApi";
-import Cookies from "js-cookie";
+import { getRoleByToken, loginUser, resetPassword } from "../../api/userApi";
 
 type ResetPasswordViewProps = {
     password: string;
     password2: string;
     loading: boolean;
+    errorMessage: string;
+    tokenInvalid: boolean;
     setPassword: (value: string) => void;
     setPassword2: (value: string) => void;
     handleSubmit: (e: React.FormEvent) => void;
 };
 
-const { mockNavigate, mockSearchParams, getLatestProps, setLatestProps } = vi.hoisted(() => {
+const { mockNavigate, mockSearchParams, mockAuthLogin, getLatestProps, setLatestProps } = vi.hoisted(() => {
     let latestProps: ResetPasswordViewProps | undefined;
 
     return {
         mockNavigate: vi.fn(),
         mockSearchParams: new URLSearchParams("token=test-token"),
+        mockAuthLogin: vi.fn(),
         getLatestProps: () => latestProps,
         setLatestProps: (props: ResetPasswordViewProps) => {
             latestProps = props;
@@ -53,23 +55,25 @@ vi.mock("./ResetPasswordView", () => ({
 }));
 
 vi.mock("../../api/userApi", () => ({
+    getRoleByToken: vi.fn(),
     loginUser: vi.fn(),
     resetPassword: vi.fn(),
 }));
 
-vi.mock("js-cookie", () => ({
-    default: {
-        set: vi.fn(),
-    },
+vi.mock("../../context/AuthContext", () => ({
+    useAuth: () => ({
+        login: mockAuthLogin,
+    }),
 }));
 
 describe("ResetPassword", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         setLatestProps(undefined as any);
+        vi.mocked(getRoleByToken).mockResolvedValue({ role: "STUDENT" });
     });
 
-    it("resets password, logs user in and redirects to summary", async () => {
+    it("resets password, logs user in through auth context and redirects to summary", async () => {
         vi.mocked(resetPassword).mockResolvedValue({ success: true, email: "student@osu.cz" });
         vi.mocked(loginUser).mockResolvedValue({
             token: "token123",
@@ -98,15 +102,20 @@ describe("ResetPassword", () => {
         expect(preventDefault).toHaveBeenCalledTimes(1);
         expect(resetPassword).toHaveBeenCalledWith({ token: "test-token", password: "Strong123" });
         expect(loginUser).toHaveBeenCalledWith("student@osu.cz", "Strong123");
-        expect(Cookies.set).toHaveBeenCalledWith("token", "token123");
-        expect(Cookies.set).toHaveBeenCalledWith("userEmail", "student@osu.cz");
-        expect(Cookies.set).toHaveBeenCalledWith("userRole", "STUDENT");
-        expect(mockNavigate).toHaveBeenCalledWith("/summary");
+        expect(mockAuthLogin).toHaveBeenCalledWith("token123", {
+            email: "student@osu.cz",
+            role: "STUDENT",
+            firstName: undefined,
+            lastName: undefined,
+        });
+        expect(mockNavigate).toHaveBeenCalledWith("/summary", {
+            replace: true,
+            state: { fromPasswordReset: true },
+        });
     });
 
-    it("shows reset error and does not login when reset is unsuccessful", async () => {
+    it("sets reset error and does not login when reset is unsuccessful", async () => {
         vi.mocked(resetPassword).mockResolvedValue({ success: false, message: "Token expiroval" });
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -123,18 +132,15 @@ describe("ResetPassword", () => {
             await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
         });
 
-        expect(alertSpy).toHaveBeenCalledWith("Token expiroval");
+        expect(latestProps().errorMessage).toBe("Token expiroval");
         expect(loginUser).not.toHaveBeenCalled();
-        expect(Cookies.set).not.toHaveBeenCalled();
+        expect(mockAuthLogin).not.toHaveBeenCalled();
         expect(mockNavigate).not.toHaveBeenCalled();
-
-        alertSpy.mockRestore();
     });
 
-    it("shows alert when auto login fails after successful reset", async () => {
+    it("sets error when auto login fails after successful reset", async () => {
         vi.mocked(resetPassword).mockResolvedValue({ success: true, email: "student@osu.cz" });
         vi.mocked(loginUser).mockResolvedValue(undefined as any);
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -151,16 +157,13 @@ describe("ResetPassword", () => {
             await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
         });
 
-        expect(alertSpy).toHaveBeenCalled();
-        expect(Cookies.set).not.toHaveBeenCalled();
+        expect(latestProps().errorMessage).toContain("přihlášení se nezdařilo");
+        expect(mockAuthLogin).not.toHaveBeenCalled();
         expect(mockNavigate).not.toHaveBeenCalled();
-
-        alertSpy.mockRestore();
     });
 
-    it("shows communication error when reset request throws", async () => {
+    it("sets communication error when reset request throws", async () => {
         vi.mocked(resetPassword).mockRejectedValue({ response: { data: { message: "Server down" } } });
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -177,10 +180,9 @@ describe("ResetPassword", () => {
             await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
         });
 
-        expect(alertSpy).toHaveBeenCalledWith(expect.stringContaining("Chyba:"));
+        expect(latestProps().errorMessage).toBe("Server down");
+        expect(latestProps().tokenInvalid).toBe(true);
         expect(loginUser).not.toHaveBeenCalled();
         expect(mockNavigate).not.toHaveBeenCalled();
-
-        alertSpy.mockRestore();
     });
 });

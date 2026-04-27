@@ -50,7 +50,7 @@ describe("ForgotPasswordPage", () => {
         });
     });
 
-    it("shows inline error when api call fails", async () => {
+    it("shows success state when api call fails without not-found response", async () => {
         vi.mocked(forgotPassword).mockRejectedValue(new Error("fail"));
 
         render(
@@ -65,7 +65,7 @@ describe("ForgotPasswordPage", () => {
         fireEvent.submit(screen.getByRole("button", { name: /odeslat odkaz/i }).closest("form") as HTMLFormElement);
 
         await waitFor(() => {
-            expect(screen.getByText(/neočekávaná chyba|neoÄŤek/iu)).toBeInTheDocument();
+            expect(screen.getByText(/zkontrolujte e-mail/i)).toBeInTheDocument();
             expect(mockNavigate).not.toHaveBeenCalled();
         });
     });
@@ -99,6 +99,6 @@ describe("ForgotPasswordPage", () => {
         );
 
         fireEvent.click(screen.getByText((text) => text.includes("Zp")));
-        expect(mockNavigate).toHaveBeenCalledWith(-1);
+        expect(mockNavigate).toHaveBeenCalledWith("/", { replace: true });
     });
 });
