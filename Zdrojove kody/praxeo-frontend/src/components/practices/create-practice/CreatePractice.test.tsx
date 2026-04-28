@@ -2,7 +2,7 @@
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import CreatePractice from "../CreatePractice";
+import CreatePractice from "./CreatePractice";
 import { createPractice } from "../../../api/practicesApi";
 
 type CreatePracticeViewProps = {
@@ -50,7 +50,7 @@ vi.mock("./CreatePracticeView", () => ({
     },
 }));
 
-vi.mock("../../api/practicesApi", () => ({
+vi.mock("../../../api/practicesApi", () => ({
     createPractice: vi.fn(),
 }));
 
@@ -89,9 +89,8 @@ describe("CreatePractice", () => {
         expect(mockNavigate).toHaveBeenCalledWith("/practices/77");
     });
 
-    it("shows alert when create fails", async () => {
+    it("sets error when create fails", async () => {
         vi.mocked(createPractice).mockRejectedValue(new Error("Chyba"));
-        const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => undefined);
 
         render(
             <MemoryRouter>
@@ -109,9 +108,7 @@ describe("CreatePractice", () => {
             await latestProps().onSubmit();
         });
 
-        expect(alertSpy).toHaveBeenCalled();
+        expect(latestProps().error).toBe("Nepodařilo se vytvořit praxi.");
         expect(mockNavigate).not.toHaveBeenCalled();
-
-        alertSpy.mockRestore();
     });
 });
