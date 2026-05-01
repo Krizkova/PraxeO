@@ -8,19 +8,27 @@ import {
 } from "../../api/tasksApi";
 import type { Task as TaskType, TaskFormData } from "../../api/tasksApi";
 import TaskView from "./TaskView";
+import ConfirmDeleteDialog from "./ConfirmDeleteDialog";
+import { getCookie } from "../../utils/forms/cookies";
 
 interface Props {
     practiceId: number;
     allowCreate: boolean;
+    refreshKey: number;
 }
 
-const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
+const Task: React.FC<Props> = ({ practiceId, allowCreate, refreshKey }) => {
     const [tasks, setTasks] = useState<TaskType[]>([]);
     const [show, setShow] = useState(false);
 
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+    const [confirmDeleteTitle, setConfirmDeleteTitle] = useState<string>("");
+
+    const currentUserEmail = getCookie("userEmail") || "";
+
     useEffect(() => {
         getTasks(practiceId).then((res) => setTasks(res || []));
-    }, [practiceId]);
+    }, [practiceId, refreshKey]);
 
     const showError = (err: unknown) => {
         const message = axios.isAxiosError(err)
@@ -35,9 +43,6 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
     const handleCreate = async (data: TaskFormData) => {
         try {
             const res = await createTask(practiceId, data);
-            // Refresh tasks to get the ones with updated files after upload completes in TaskView
-            // Actually TaskView calls uploadTaskAttachment AFTER onCreate returns.
-            // So we need to return the task but might need another refresh.
             setTasks((prev) => [...prev, res]);
             setShow(false);
             return res;
@@ -59,12 +64,24 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
         }
     };
 
-    const handleDelete = (id: number) => {
-        deleteTask(id)
+    const handleDeleteRequest = (id: number) => {
+        const task = tasks.find((t) => t.id === id);
+        setConfirmDeleteId(id);
+        setConfirmDeleteTitle(task?.title || "");
+    };
+
+    const handleConfirmDelete = () => {
+        if (confirmDeleteId === null) return;
+
+        deleteTask(confirmDeleteId)
             .then(() => {
-                setTasks((prev) => prev.filter((t) => t.id !== id));
+                setTasks((prev) => prev.filter((t) => t.id !== confirmDeleteId));
             })
-            .catch(showError);
+            .catch(showError)
+            .finally(() => {
+                setConfirmDeleteId(null);
+                setConfirmDeleteTitle("");
+            });
     };
 
     const refreshTasks = () => {
@@ -72,18 +89,33 @@ const Task: React.FC<Props> = ({ practiceId, allowCreate }) => {
     };
 
     return (
-        <TaskView
-            practiceId={practiceId}
-            tasks={tasks}
-            show={show}
-            setShow={setShow}
-            onCreate={handleCreate}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-            onRefresh={refreshTasks}
-            allowCreate={allowCreate}
-            error={null}
-        />
+        <>
+            {confirmDeleteId !== null && (
+                <ConfirmDeleteDialog
+                    title="Smazat task?"
+                    fileName={confirmDeleteTitle}
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => {
+                        setConfirmDeleteId(null);
+                        setConfirmDeleteTitle("");
+                    }}
+                />
+            )}
+
+            <TaskView
+                practiceId={practiceId}
+                tasks={tasks}
+                show={show}
+                setShow={setShow}
+                onCreate={handleCreate}
+                onUpdate={handleUpdate}
+                onDelete={handleDeleteRequest}
+                onRefresh={refreshTasks}
+                allowCreate={allowCreate}
+                currentUserEmail={currentUserEmail}
+                error={null}
+            />
+        </>
     );
 };
 

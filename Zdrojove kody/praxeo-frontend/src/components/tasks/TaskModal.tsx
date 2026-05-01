@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { CheckSquare, X, Download, Trash2, FileText } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { CheckSquare, X } from "lucide-react";
 import {
     inputStyle,
     textareaStyle,
@@ -13,7 +13,7 @@ import {
     clearFocusStyle,
 } from "../../utils/forms/formHelpers";
 import type { Task } from "../../api/tasksApi";
-import { downloadAttachment, deleteAttachment } from "../../api/practicesApi";
+import TaskModalFileList from "./TaskModalFileList";
 
 interface Props {
     show: boolean;
@@ -68,25 +68,18 @@ const TaskModal: React.FC<Props> = ({
                                         handleSubmit,
                                         resetForm,
                                     }) => {
-    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [showErrors, setShowErrors] = useState(false);
 
     // Reset lokálních chyb při otevření nebo změně režimu
     useEffect(() => {
-        if (show) {
-            setShowErrors(false);
-        }
+        if (show) setShowErrors(false);
     }, [show, editingTask]);
 
     if (!show) return null;
 
-    // Povinná pole kontrolujeme až po pokusu o uložení
     const localTitleInvalid = showErrors && !title.trim();
     const localDescriptionInvalid = showErrors && !description.trim();
-
-    // Datum není povinné, ale pokud je vyplněné, musí být v povoleném rozmezí
-    const localDateInvalid =
-        showErrors && !!expectedEndDate.trim() && dateInvalid;
+    const localDateInvalid = showErrors && !!expectedEndDate.trim() && dateInvalid;
 
     // Zavření modalu vyčistí formulář i lokální chyby
     const handleClose = () => {
@@ -94,46 +87,11 @@ const TaskModal: React.FC<Props> = ({
         resetForm();
     };
 
-    const handleDownload = async (id: number, title: string) => {
-        try {
-            const response = await downloadAttachment(id);
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement("a");
-            link.href = url;
-            link.setAttribute("download", title);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (error) {
-            console.error("Chyba při stahování souboru:", error);
-            alert("Soubor se nepodařilo stáhnout.");
-        }
-    };
-
-    const handleDeleteAttachment = async (id: number) => {
-        if (window.confirm("Opravdu chcete smazat tento soubor?")) {
-            try {
-                await deleteAttachment(id);
-                window.location.reload();
-            } catch (error) {
-                console.error("Chyba při mazání souboru:", error);
-                alert("Soubor se nepodařilo smazat.");
-            }
-        }
-    };
-
     // Kliknutí na uložení vždy spustí validaci
     const handleSubmitClick = () => {
         setShowErrors(true);
-
-        if (!title.trim() || !description.trim()) {
-            return;
-        }
-
-        if (expectedEndDate.trim() && dateInvalid) {
-            return;
-        }
-
+        if (!title.trim() || !description.trim()) return;
+        if (expectedEndDate.trim() && dateInvalid) return;
         handleSubmit();
         setShowErrors(false);
     };
@@ -141,186 +99,78 @@ const TaskModal: React.FC<Props> = ({
     return (
         <div
             onClick={handleClose}
-            style={{
-                position: "fixed",
-                inset: 0,
-                background: "rgba(0,0,0,0.4)",
-                zIndex: 1000,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 16,
-            }}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
         >
             <div
                 onClick={(e) => e.stopPropagation()}
-                style={{
-                    background: "white",
-                    borderRadius: 18,
-                    width: "100%",
-                    maxWidth: 520,
-                    border: "1px solid #e0ede0",
-                    overflow: "hidden",
-                    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-                }}
+                style={{ background: "white", borderRadius: 18, width: "100%", maxWidth: 520, border: "1px solid #e0ede0", overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}
             >
                 {/* Hlavička modalu */}
-                <div
-                    style={{
-                        padding: "20px 24px 16px",
-                        borderBottom: "1px solid #e8f5e9",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        background: "linear-gradient(135deg, #f8faf8, #eef5ee)",
-                    }}
-                >
+                <div style={{ padding: "20px 24px 16px", borderBottom: "1px solid #e8f5e9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "linear-gradient(135deg, #f8faf8, #eef5ee)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={iconBoxStyle}>
                             <CheckSquare size={14} color="#1F8A4D" strokeWidth={2.2} />
                         </div>
-
-                        <h3
-                            style={{
-                                margin: 0,
-                                fontSize: 17,
-                                fontWeight: 700,
-                                color: "#1a3d1a",
-                            }}
-                        >
+                        <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#1a3d1a" }}>
                             {editingTask ? "Upravit task" : "Nový task"}
                         </h3>
                     </div>
-
-                    <button
-                        type="button"
-                        onClick={handleClose}
-                        style={{
-                            background: "none",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "#8aaa8a",
-                            display: "flex",
-                            alignItems: "center",
-                            fontFamily: "inherit",
-                        }}
-                    >
+                    <button type="button" onClick={handleClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#8aaa8a", display: "flex", alignItems: "center", fontFamily: "inherit" }}>
                         <X size={20} strokeWidth={1.8} />
                     </button>
                 </div>
 
                 {/* Obsah formuláře */}
                 <div style={{ padding: 24, maxHeight: "60vh", overflowY: "auto" }}>
+
                     {/* Název */}
                     <div style={{ marginBottom: 16 }}>
-                        <label style={labelStyle}>
-                            Název <span style={{ color: "#e24b4a" }}>*</span>
-                        </label>
+                        <label style={labelStyle}>Název <span style={{ color: "#e24b4a" }}>*</span></label>
                         <input
-                            type="text"
-                            value={title}
+                            type="text" value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Název tasku"
                             style={getFieldStyle(inputStyle, localTitleInvalid)}
                             onFocus={(e) => applyFocusStyle(e.currentTarget)}
-                            onBlur={(e) =>
-                                clearFocusStyle(e.currentTarget, localTitleInvalid)
-                            }
+                            onBlur={(e) => clearFocusStyle(e.currentTarget, localTitleInvalid)}
                         />
-                        {localTitleInvalid && (
-                            <div style={errorTextStyle}>Povinné pole.</div>
-                        )}
+                        {localTitleInvalid && <div style={errorTextStyle}>Povinné pole.</div>}
                     </div>
 
                     {/* Popis */}
                     <div style={{ marginBottom: 16 }}>
-                        <label style={labelStyle}>
-                            Popis <span style={{ color: "#e24b4a" }}>*</span>
-                        </label>
+                        <label style={labelStyle}>Popis <span style={{ color: "#e24b4a" }}>*</span></label>
                         <textarea
-                            rows={4}
-                            value={description}
+                            rows={4} value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Popis tasku..."
                             style={getFieldStyle(textareaStyle, localDescriptionInvalid)}
                             onFocus={(e) => applyFocusStyle(e.currentTarget)}
-                            onBlur={(e) =>
-                                clearFocusStyle(e.currentTarget, localDescriptionInvalid)
-                            }
+                            onBlur={(e) => clearFocusStyle(e.currentTarget, localDescriptionInvalid)}
                         />
-                        {localDescriptionInvalid && (
-                            <div style={errorTextStyle}>Povinné pole.</div>
-                        )}
+                        {localDescriptionInvalid && <div style={errorTextStyle}>Povinné pole.</div>}
                     </div>
 
                     {/* Odkazy */}
                     <div style={{ marginBottom: 16 }}>
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginBottom: 6,
-                            }}
-                        >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                             <label style={{ ...labelStyle, marginBottom: 0 }}>Odkazy</label>
-
-                            <button
-                                type="button"
-                                onClick={addLink}
-                                style={{
-                                    background: "none",
-                                    border: "1.5px solid #2d7a2d",
-                                    color: "#2d7a2d",
-                                    borderRadius: 8,
-                                    padding: "3px 10px",
-                                    fontSize: 12,
-                                    cursor: "pointer",
-                                    fontWeight: 500,
-                                    fontFamily: "inherit",
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: 4,
-                                }}
-                            >
+                            <button type="button" onClick={addLink} style={{ background: "none", border: "1.5px solid #2d7a2d", color: "#2d7a2d", borderRadius: 8, padding: "3px 10px", fontSize: 12, cursor: "pointer", fontWeight: 500, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 4 }}>
                                 + Přidat odkaz
                             </button>
                         </div>
-
                         {linkItems.map((link, index) => (
-                            <div
-                                key={index}
-                                style={{ display: "flex", gap: 8, marginBottom: 8 }}
-                            >
+                            <div key={index} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
                                 <input
-                                    type="text"
-                                    value={link}
+                                    type="text" value={link}
                                     onChange={(e) => updateLink(index, e.target.value)}
                                     placeholder="https://odkaz.cz"
                                     style={{ ...inputStyle, flex: 1 }}
                                     onFocus={(e) => applyFocusStyle(e.currentTarget)}
                                     onBlur={(e) => clearFocusStyle(e.currentTarget)}
                                 />
-
                                 {linkItems.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => removeLink(index)}
-                                        style={{
-                                            background: "#fce4ec",
-                                            border: "none",
-                                            borderRadius: 8,
-                                            width: 48,
-                                            height: 48,
-                                            cursor: "pointer",
-                                            color: "#c62828",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            flexShrink: 0,
-                                            fontFamily: "inherit",
-                                        }}
-                                    >
+                                    <button type="button" onClick={() => removeLink(index)} style={{ background: "#fce4ec", border: "none", borderRadius: 8, width: 48, height: 48, cursor: "pointer", color: "#c62828", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontFamily: "inherit" }}>
                                         ×
                                     </button>
                                 )}
@@ -328,236 +178,46 @@ const TaskModal: React.FC<Props> = ({
                         ))}
                     </div>
 
-                    {/* Soubory */}
+                    {/* Soubory — delegováno do TaskModalFileList */}
                     <div style={{ marginBottom: 16 }}>
                         <label style={labelStyle}>Soubory</label>
-
-                        {/* Stávající přílohy ze serveru */}
-                        {editingTask?.files && editingTask.files.length > 0 && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: 8,
-                                    marginBottom: 12,
-                                }}
-                            >
-                                {editingTask.files.map((attachment) => (
-                                    <div
-                                        key={attachment.id}
-                                        style={{
-                                            background: "#f6faf6",
-                                            border: "1px solid #e0ede0",
-                                            borderRadius: 10,
-                                            padding: "9px 12px",
-                                            display: "flex",
-                                            justifyContent: "space-between",
-                                            alignItems: "center",
-                                            gap: 8,
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: 8,
-                                                fontSize: 13,
-                                                color: "#2c4a2c",
-                                                overflow: "hidden",
-                                                textOverflow: "ellipsis",
-                                                whiteSpace: "nowrap",
-                                                flex: 1,
-                                            }}
-                                        >
-                                            <FileText size={14} style={{ flexShrink: 0 }} />
-                                            {attachment.title}
-                                        </span>
-
-                                        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDownload(attachment.id, attachment.title)}
-                                                style={{
-                                                    background: "#e3f2fd",
-                                                    border: "none",
-                                                    borderRadius: 8,
-                                                    width: 28,
-                                                    height: 28,
-                                                    cursor: "pointer",
-                                                    color: "#1565c0",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                                title="Stáhnout"
-                                            >
-                                                <Download size={14} />
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDeleteAttachment(attachment.id)}
-                                                style={{
-                                                    background: "#fce4ec",
-                                                    border: "none",
-                                                    borderRadius: 8,
-                                                    width: 28,
-                                                    height: 28,
-                                                    cursor: "pointer",
-                                                    color: "#c62828",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                }}
-                                                title="Smazat"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {/* Nově vybrané soubory k nahrání */}
-                        {selectedFiles.length > 0 && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
-                                    gap: 8,
-                                    marginBottom: 10,
-                                }}
-                            >
-                                {selectedFiles.map((file, index) => (
-                                    <div key={index} style={{ display: "flex", gap: 8 }}>
-                                        <div
-                                            style={{
-                                                ...inputStyle,
-                                                height: 48,
-                                                display: "flex",
-                                                alignItems: "center",
-                                                padding: "0 14px",
-                                                width: "auto",
-                                                color: "#6b8f6b",
-                                                fontSize: 13,
-                                            }}
-                                        >
-                                            {file.name}
-                                        </div>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => removeFile(index)}
-                                            style={{
-                                                background: "#fce4ec",
-                                                border: "none",
-                                                borderRadius: 8,
-                                                width: 48,
-                                                height: 48,
-                                                cursor: "pointer",
-                                                color: "#c62828",
-                                                display: "flex",
-                                                alignItems: "center",
-                                                justifyContent: "center",
-                                                flexShrink: 0,
-                                                fontFamily: "inherit",
-                                            }}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            style={{ display: "none" }}
-                            onChange={handleFileChange}
+                        <TaskModalFileList
+                            existingFiles={editingTask?.files ?? []}
+                            selectedFiles={selectedFiles}
+                            onFileChange={handleFileChange}
+                            onRemoveFile={removeFile}
                         />
-
-                        <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            style={{
-                                background: "none",
-                                border: "1.5px solid #2d7a2d",
-                                color: "#2d7a2d",
-                                borderRadius: 8,
-                                padding: "6px 14px",
-                                fontSize: 13,
-                                cursor: "pointer",
-                                fontWeight: 500,
-                                fontFamily: "inherit",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 6,
-                            }}
-                        >
-                            + Přidat soubor
-                        </button>
                     </div>
 
-                    {/* Datum je nepovinné */}
+                    {/* Datum */}
                     <div style={{ marginBottom: 16 }}>
                         <label style={labelStyle}>Předpokládané datum ukončení</label>
                         <input
-                            type="date"
-                            value={expectedEndDate}
+                            type="date" value={expectedEndDate}
                             onChange={(e) => setExpectedEndDate(e.target.value)}
-                            min={minDateValue}
-                            max={maxDateValue}
+                            min={minDateValue} max={maxDateValue}
                             style={getFieldStyle(inputStyle, localDateInvalid)}
                             onFocus={(e) => applyFocusStyle(e.currentTarget)}
-                            onBlur={(e) =>
-                                clearFocusStyle(e.currentTarget, localDateInvalid)
-                            }
+                            onBlur={(e) => clearFocusStyle(e.currentTarget, localDateInvalid)}
                         />
-                        {localDateInvalid && (
-                            <div style={errorTextStyle}>
-                                Datum musí být v povoleném rozmezí.
-                            </div>
-                        )}
+                        {localDateInvalid && <div style={errorTextStyle}>Datum musí být v povoleném rozmezí.</div>}
                     </div>
 
-                    {/* Volba reportování */}
-                    <div
-                        style={{
-                            marginBottom: 16,
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 10,
-                        }}
-                    >
-                        <input
-                            type="checkbox"
-                            id="reportFlag"
-                            checked={reportFlag}
-                            onChange={(e) => setReportFlag(e.target.checked)}
-                            style={{ width: 16, height: 16, cursor: "pointer" }}
-                        />
-                        <label
-                            htmlFor="reportFlag"
-                            style={{ ...labelStyle, marginBottom: 0, cursor: "pointer" }}
-                        >
-                            Reportovat
-                        </label>
+                    {/* Reportování */}
+                    <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
+                        <input type="checkbox" id="reportFlag" checked={reportFlag} onChange={(e) => setReportFlag(e.target.checked)} style={{ width: 16, height: 16, cursor: "pointer" }} />
+                        <label htmlFor="reportFlag" style={{ ...labelStyle, marginBottom: 0, cursor: "pointer" }}>Reportovat</label>
                     </div>
 
-                    {/* Hodnocení se zobrazuje jen při editaci */}
+                    {/* Hodnocení — pouze při editaci */}
                     {editingTask && (
                         <div style={{ marginBottom: 16 }}>
                             <label style={labelStyle}>Hodnocení</label>
                             <textarea
-                                rows={3}
-                                value={finalEvaluation}
+                                rows={3} value={finalEvaluation}
                                 onChange={(e) => setFinalEvaluation(e.target.value)}
                                 placeholder="Zadejte hodnocení úkolu"
-                                style={getFieldStyle(textareaStyle, false, {
-                                    minHeight: 80,
-                                })}
+                                style={getFieldStyle(textareaStyle, false, { minHeight: 80 })}
                                 onFocus={(e) => applyFocusStyle(e.currentTarget)}
                                 onBlur={(e) => clearFocusStyle(e.currentTarget, false)}
                             />
@@ -566,17 +226,7 @@ const TaskModal: React.FC<Props> = ({
                 </div>
 
                 {/* Patička modalu */}
-                <div
-                    style={{
-                        padding: "14px 24px",
-                        borderTop: "1px solid #e8f5e9",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        gap: 10,
-                        background: "#fafcfa",
-                    }}
-                >
+                <div style={{ padding: "14px 24px", borderTop: "1px solid #e8f5e9", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, background: "#fafcfa" }}>
                     <span style={{ fontSize: 12, color: "#c62828" }}>
                         {showErrors && (!title.trim() || !description.trim())
                             ? "Vyplňte povinná pole označená *"
@@ -584,44 +234,11 @@ const TaskModal: React.FC<Props> = ({
                                 ? "Zadejte platné datum v povoleném rozmezí"
                                 : ""}
                     </span>
-
                     <div style={{ display: "flex", gap: 10 }}>
-                        <button
-                            type="button"
-                            onClick={handleClose}
-                            style={{
-                                background: "none",
-                                border: "1.5px solid #d0e8d0",
-                                borderRadius: 10,
-                                padding: "8px 20px",
-                                color: "#5a7a5a",
-                                fontWeight: 500,
-                                fontFamily: "inherit",
-                                fontSize: 14,
-                                cursor: "pointer",
-                            }}
-                        >
+                        <button type="button" onClick={handleClose} style={{ background: "none", border: "1.5px solid #d0e8d0", borderRadius: 10, padding: "8px 20px", color: "#5a7a5a", fontWeight: 500, fontFamily: "inherit", fontSize: 14, cursor: "pointer" }}>
                             Zrušit
                         </button>
-
-                        {/* Tlačítko je aktivní, validace proběhne po kliknutí */}
-                        <button
-                            type="button"
-                            onClick={handleSubmitClick}
-                            style={{
-                                background: "linear-gradient(135deg, #2d7a2d, #4caf50)",
-                                border: "none",
-                                borderRadius: 10,
-                                padding: "8px 24px",
-                                color: "white",
-                                fontWeight: 500,
-                                fontFamily: "inherit",
-                                fontSize: 14,
-                                cursor: "pointer",
-                                boxShadow: "0 3px 10px rgba(45,122,45,0.3)",
-                                opacity: 1,
-                            }}
-                        >
+                        <button type="button" onClick={handleSubmitClick} style={{ background: "linear-gradient(135deg, #2d7a2d, #4caf50)", border: "none", borderRadius: 10, padding: "8px 24px", color: "white", fontWeight: 500, fontFamily: "inherit", fontSize: 14, cursor: "pointer", boxShadow: "0 3px 10px rgba(45,122,45,0.3)" }}>
                             {editingTask ? "Uložit změny" : "Přidat"}
                         </button>
                     </div>

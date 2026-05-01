@@ -6,6 +6,7 @@ import cz.osu.praxeo.entity.Task;
 import cz.osu.praxeo.dao.AttachmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ public class TaskMapper {
     private final AttachmentMapper attachmentMapper;
     private final AttachmentRepository attachmentRepository;
 
+    @Transactional(readOnly = true)
     public TaskDto toDto(Task task) {
         if (task == null) return null;
 

@@ -98,7 +98,9 @@ const RegisterUserView: React.FC<RegisterUserViewProps> = ({
     const emailFieldError = emailError
         ? emailError
         : emailInvalid
-            ? "Učitel musí mít univerzitní adresu @osu.cz"
+            ? isAdminOrTeacher && roleSelect === "TEACHER"
+                ? "Učitel musí mít univerzitní adresu @osu.cz"
+                : "Použijte svou univerzitní adresu @osu.cz"
             : undefined;
 
     // Styl pro select pole

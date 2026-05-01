@@ -2,6 +2,7 @@ package cz.osu.praxeo.service;
 
 import cz.osu.praxeo.dao.AttachmentRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
+import cz.osu.praxeo.dao.TaskRepository;
 import cz.osu.praxeo.dto.PracticesDto;
 import cz.osu.praxeo.entity.*;
 import cz.osu.praxeo.mapper.AttachmentMapper;
@@ -13,6 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import cz.osu.praxeo.dao.TaskRepository;
+import cz.osu.praxeo.dao.AttachmentRepository;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,6 +30,12 @@ import static org.mockito.Mockito.*;
 class PracticesServiceTest {
 
     @Mock
+    private TaskRepository taskRepository;
+
+    @Mock
+    private AttachmentRepository attachmentRepository;
+
+    @Mock
     UserService userService;
 
     @Mock
@@ -38,11 +47,10 @@ class PracticesServiceTest {
 
     @BeforeEach
     void setUp() {
-        AttachmentRepository attachmentRepository = mock(AttachmentRepository.class);
         AttachmentMapper attachmentMapper = new AttachmentMapper();
         TaskMapper taskMapper = new TaskMapper(attachmentMapper, attachmentRepository);
         practicesMapper = new PracticesMapper(taskMapper);
-        practicesService = new PracticesService(practicesMapper, userService, practicesRepository);
+        practicesService = new PracticesService(practicesMapper, userService, practicesRepository, taskRepository, attachmentRepository);
     }
 
     private User makeUser(Long id, Role role) {
@@ -50,6 +58,7 @@ class PracticesServiceTest {
         u.setId(id);
         u.setRole(role);
         u.setEmail(role.name().toLowerCase() + id + "@osu.cz");
+        u.setActive(true);
         return u;
     }
 
@@ -596,11 +605,15 @@ class PracticesServiceTest {
     @DisplayName("updatePractice – admin může editovat vše včetně stavu")
     void updatePractice_adminCanEditEverything() {
         User founder = makeUser(1L, Role.EXTERNAL_WORKER);
+        User student = makeUser(2L, Role.STUDENT);
         User admin = makeUser(99L, Role.ADMIN);
         when(userService.getCurrentUser()).thenReturn(admin);
 
         Practices p = makePractice(1L, founder, PracticeState.ACTIVE);
+        p.setStudent(student);
         when(practicesRepository.findById(1L)).thenReturn(Optional.of(p));
+        when(userService.findByEmail(founder.getEmail())).thenReturn(founder);
+        when(userService.findByEmail(student.getEmail())).thenReturn(student);
 
         PracticesDto request = new PracticesDto();
         request.setName("Admin název");
@@ -608,6 +621,8 @@ class PracticesServiceTest {
         request.setFinalEvaluation("Admin hodnocení");
         request.setStudentEvaluation("Admin studentské hodnocení");
         request.setState("ACTIVE");
+        request.setFounderEmail(founder.getEmail());
+        request.setStudentEmail(student.getEmail());
 
         PracticesDto result = practicesService.updatePractice(1L, request);
 

@@ -12,14 +12,15 @@ import type {
     UpdatePracticePayload,
     PracticeState,
 } from "../../../utils/forms/types/practice";
+import type { EditMode } from "../../../pages/practices/PracticeDetailPage";
 
 interface PracticeDetailViewProps {
     practice: Practice;
     loading: boolean;
     error: string | null;
     attachments: Attachment[];
-    editMode: boolean;
-    setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
+    editMode: EditMode;
+    setEditMode: React.Dispatch<React.SetStateAction<EditMode>>;
     canEditFounder: boolean;
     canEditStudent: boolean;
     canEditFinalEvaluation: boolean;
@@ -33,9 +34,13 @@ interface PracticeDetailViewProps {
     onChangeState: (state: PracticeState) => void;
     onAssignStudent: (assign: boolean) => void;
     onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
+    taskRefreshKey: number;
+    founderResetKey: number;
 }
 
-// Detail praxe drží lokální stav formuláře, validaci a rozděluje zobrazení do sekcí
+// Prezentační vrstva detailu praxe.
+// Přepíná mezi režimem čtení a editace, drží lokální stav formuláře
+// a skládá payload pro uložení změn podle aktuální role a editMode.
 const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                                                                    practice,
                                                                    loading,
@@ -56,7 +61,10 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                                                                    onChangeState,
                                                                    onAssignStudent,
                                                                    onChangeStudentState,
+                                                                   taskRefreshKey,
+                                                                   founderResetKey,
                                                                }) => {
+    // Lokální stav formuláře je oddělený od načteného detailu.
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
     const [completedAt, setCompletedAt] = useState<string | null>(null);
@@ -69,9 +77,10 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
 
     const role: string | undefined = getCookie("userRole");
     const isAdmin = role === "ADMIN";
+
     const { minDateValue, maxDateValue } = getPracticeDateLimits();
 
-    // Při změně praxe nebo režimu editace naplníme formulář aktuálními daty
+    // Po načtení nové praxe nebo přepnutí editace se formulář znovu naplní aktuálními daty.
     useEffect(() => {
         setName(practice.name || "");
         setDescription(practice.description || "");
@@ -84,18 +93,27 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
         setShowErrors(false);
     }, [practice, editMode]);
 
+    // Po zavření chybového dialogu se founder email vrátí na potvrzenou hodnotu
+    // a studentEmail se resetuje na původní hodnotu z praxe.
+    useEffect(() => {
+        setFounderEmail(practice.founderEmail || "");
+        setStudentEmail(practice.studentEmail || "");
+    }, [founderResetKey, practice.founderEmail, practice.studentEmail]);
+
     const completedAtValue = completedAt ? completedAt.substring(0, 10) : "";
 
-    // Validace polí pro zakladatele praxe
-    const nameInvalid = showErrors && canEditFounder && !name.trim();
-    const descriptionInvalid = showErrors && canEditFounder && !description.trim();
-    const dateMissing = showErrors && canEditFounder && !completedAtValue;
+    const isFounderMode = editMode === "founder";
+    const nameInvalid = showErrors && isFounderMode && canEditFounder && !name.trim();
+    const descriptionInvalid =
+        showErrors && isFounderMode && canEditFounder && !description.trim();
+    const dateMissing = showErrors && isFounderMode && canEditFounder && !completedAtValue;
 
     const isDateOutOfRange =
         !!completedAtValue &&
         (completedAtValue < minDateValue || completedAtValue > maxDateValue);
 
-    const dateOutOfRange = showErrors && canEditFounder && isDateOutOfRange;
+    const dateOutOfRange =
+        showErrors && isFounderMode && canEditFounder && isDateOutOfRange;
     const dateInvalid = dateMissing || dateOutOfRange;
 
     const canSaveFounderFields =
@@ -104,37 +122,96 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
         !!completedAtValue &&
         !isDateOutOfRange;
 
-    const canSave = !canEditFounder || canSaveFounderFields;
+    const canSave = !isFounderMode || !canEditFounder || canSaveFounderFields;
 
-    // Sestaví payload podle oprávnění uživatele
+    const hasStudent = !!studentEmail.trim();
+
+    // Bez studenta lze nastavit pouze NEW nebo CANCELED.
+    const allowedAdminStatesWithoutStudent: PracticeState[] = ["NEW", "CANCELED"];
+
+    // Po přiřazení studenta už stav NEW není povolený.
+    const allowedAdminStatesWithStudent: PracticeState[] = [
+        "ACTIVE",
+        "SUBMITTED",
+        "COMPLETED",
+        "CANCELED",
+    ];
+
+    const availableAdminStates = isAdmin
+        ? hasStudent
+            ? allowedAdminStatesWithStudent
+            : allowedAdminStatesWithoutStudent
+        : undefined;
+
+    const adminStateHelpText = isAdmin
+        ? hasStudent
+            ? "Po přiřazení studenta už nelze změnit stav zpět na Nový."
+            : "Bez přiřazeného studenta lze nastavit pouze stavy Nový a Zrušený."
+        : undefined;
+
+    // Po změně přiřazeného studenta opravíme případný neplatný stav.
+    useEffect(() => {
+        if (!isAdmin) {
+            return;
+        }
+
+        if (hasStudent && practiceState === "NEW") {
+            setPracticeState("ACTIVE");
+        }
+
+        if (!hasStudent && !["NEW", "CANCELED"].includes(practiceState)) {
+            setPracticeState("NEW");
+        }
+    }, [isAdmin, hasStudent, practiceState]);
+
+    // Sestaví payload pouze z těch polí,
+    // která mají být v aktuálním režimu skutečně změněna.
     const buildUpdatePayload = (): UpdatePracticePayload => {
         const payload: UpdatePracticePayload = {};
 
-        if (canEditFounder) {
+        if (editMode === "founder" && canEditFounder) {
             payload.name = name;
             payload.description = description;
             payload.completedAt = completedAtValue || null;
         }
 
-        if (canEditFinalEvaluation) {
+        if (editMode === "evaluation" && canEditFinalEvaluation) {
             payload.finalEvaluation = finalEvaluation;
         }
 
-        if (canEditStudent) {
+        if (editMode === "student" && canEditStudent) {
             payload.studentEvaluation = studentEvaluation;
         }
 
-        // Admin může měnit přiřazení uživatelů
         if (isAdmin) {
-            payload.founderEmail = founderEmail;
-            payload.studentEmail = studentEmail;
-            payload.state = practiceState;
+            const normalizedFounderEmail = founderEmail.trim()
+                ? founderEmail.trim()
+                : null;
+            const normalizedStudentEmail = studentEmail.trim()
+                ? studentEmail.trim()
+                : null;
+
+            payload.founderEmail = normalizedFounderEmail;
+            payload.studentEmail = normalizedStudentEmail;
+            payload.finalEvaluation = finalEvaluation;
+            payload.studentEvaluation = studentEvaluation;
+
+            // Bez studenta lze uložit pouze NEW nebo CANCELED.
+            // Se studentem naopak stav NEW není povolený.
+            if (normalizedStudentEmail === null) {
+                payload.state = ["NEW", "CANCELED"].includes(practiceState)
+                    ? practiceState
+                    : "NEW";
+            } else {
+                payload.state = ["ACTIVE", "SUBMITTED", "COMPLETED", "CANCELED"].includes(practiceState)
+                    ? practiceState
+                    : "ACTIVE";
+            }
         }
 
         return payload;
     };
 
-    // Uložení změn podle oprávnění uživatele
     const handleSave = () => {
         setShowErrors(true);
 
@@ -142,15 +219,9 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
             return;
         }
 
-        // Admin může měnit stav praxe přes samostatný endpoint
-        if (isAdmin && practiceState !== practice.state) {
-            onChangeState(practiceState);
-        }
-
         onUpdate(buildUpdatePayload());
     };
 
-    // Stav načítání detailu praxe
     if (loading) {
         return (
             <div style={{ display: "flex", justifyContent: "center", padding: 48 }}>
@@ -167,7 +238,6 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
         );
     }
 
-    // Chybový stav
     if (error) {
         return <ErrorAlert message={error} />;
     }
@@ -182,10 +252,10 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                 maxWidth: 1200,
             }}
         >
-            {/* Hlavní karta s detailem nebo editací */}
             <FormCard padding={28}>
                 {editMode ? (
                     <PracticeDetailEditForm
+                        editMode={editMode}
                         canEditFounder={canEditFounder}
                         canEditFinalEvaluation={canEditFinalEvaluation}
                         canEditStudent={canEditStudent}
@@ -205,6 +275,8 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                         dateInvalid={dateInvalid}
                         minDateValue={minDateValue}
                         maxDateValue={maxDateValue}
+                        availableStates={availableAdminStates}
+                        stateHelpText={adminStateHelpText}
                         onChangeName={setName}
                         onChangeDescription={setDescription}
                         onChangeCompletedAt={setCompletedAt}
@@ -228,11 +300,11 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                         onAssignStudent={onAssignStudent}
                         onChangeStudentState={onChangeStudentState}
                         onChangeState={onChangeState}
+                        taskRefreshKey={taskRefreshKey}
                     />
                 )}
             </FormCard>
 
-            {/* Pravý panel s přílohami */}
             <PracticeAttachmentsCard
                 attachments={attachments}
                 canUpload={canUpload}

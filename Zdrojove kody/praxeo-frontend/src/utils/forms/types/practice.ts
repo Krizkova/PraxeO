@@ -40,6 +40,5 @@ export interface UpdatePracticePayload {
     state?: PracticeState;
     finalEvaluation?: string;
     studentEvaluation?: string;
-    founderEmail?: string;
     studentEmail?: string;
 }

@@ -9,6 +9,7 @@ import SecondaryButton from "../../common/SecondaryButton";
 import PracticeInfoRow from "./PracticeInfoRow";
 import PracticeIconButton from "./PracticeIconButton";
 import type { Practice } from "../../../utils/forms/types/practice";
+import type { EditMode } from "../../../pages/practices/PracticeDetailPage";
 
 interface Props {
     practice: Practice;
@@ -17,10 +18,11 @@ interface Props {
     canEditStudent: boolean;
     canEditFinalEvaluation: boolean;
     canChangeState: boolean;
-    onSetEditMode: (value: boolean) => void;
+    onSetEditMode: (value: EditMode) => void;
     onAssignStudent: (assign: boolean) => void;
     onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
     onChangeState: (state: "CANCELED" | "COMPLETED") => void;
+    taskRefreshKey: number;
 }
 
 // Read-only zobrazení detailu praxe, akcí a úkolů
@@ -35,6 +37,7 @@ const PracticeDetailReadView: React.FC<Props> = ({
                                                      onAssignStudent,
                                                      onChangeStudentState,
                                                      onChangeState,
+                                                     taskRefreshKey,
                                                  }) => {
     const btnDanger: React.CSSProperties = {
         height: 40,
@@ -65,12 +68,6 @@ const PracticeDetailReadView: React.FC<Props> = ({
     const hasFinalEvaluation = !!practice.finalEvaluation?.trim();
     const canCompletePractice = hasFinalEvaluation && hasStudentEvaluation;
 
-    const canEditPractice =
-        canEditFounder ||
-        canEditStudent ||
-        canEditFinalEvaluation ||
-        canChangeState;
-
     return (
         <div>
             <div
@@ -90,10 +87,6 @@ const PracticeDetailReadView: React.FC<Props> = ({
 
                 {canEditStudent && practice.state === "ACTIVE" && (
                     <>
-                        <SecondaryButton onClick={() => onAssignStudent(false)}>
-                            Odhlásit se z praxe
-                        </SecondaryButton>
-
                         <PrimaryButton
                             width="auto"
                             height={40}
@@ -115,10 +108,11 @@ const PracticeDetailReadView: React.FC<Props> = ({
             </div>
 
             <div style={{ marginBottom: 16 }}>
-                {canEditPractice && (
+                {/* Karanda vverchu — otevírá režim "founder": Název, Popis, Datum */}
+                {(canEditFounder || canChangeState) && (
                     <div style={{ marginBottom: 12 }}>
                         <PracticeIconButton
-                            onClick={() => onSetEditMode(true)}
+                            onClick={() => onSetEditMode("founder")}
                             title="Upravit praxi"
                             color="#e67e22"
                             size={22}
@@ -161,12 +155,13 @@ const PracticeDetailReadView: React.FC<Props> = ({
                     </span>
                 </PracticeInfoRow>
 
+                {/* Karanda u Finálního hodnocení — otevírá režim "evaluation" */}
                 <PracticeInfoRow label="Finální hodnocení:">
                     <>
-                        {practice.finalEvaluation ?? "—"}
-                        {canEditFinalEvaluation && (
+                        {practice.finalEvaluation || "—"}
+                        {canEditFinalEvaluation && role !== "ADMIN" && (
                             <PracticeIconButton
-                                onClick={() => onSetEditMode(true)}
+                                onClick={() => onSetEditMode("evaluation")}
                                 title={
                                     hasFinalEvaluation
                                         ? "Upravit hodnocení"
@@ -181,12 +176,13 @@ const PracticeDetailReadView: React.FC<Props> = ({
                     </>
                 </PracticeInfoRow>
 
+                {/* Karanda u Hodnocení studenta — otevírá režim "student" */}
                 <PracticeInfoRow label="Hodnocení studenta:">
                     <>
                         {practice.studentEvaluation ?? "—"}
-                        {canEditStudent && (
+                        {(canEditStudent) && (
                             <PracticeIconButton
-                                onClick={() => onSetEditMode(true)}
+                                onClick={() => onSetEditMode("student")}
                                 title={
                                     hasStudentEvaluation
                                         ? "Upravit hodnocení"
@@ -206,9 +202,10 @@ const PracticeDetailReadView: React.FC<Props> = ({
                 <Task
                     practiceId={practice.id}
                     allowCreate={
-                        (practice.state === "NEW" || practice.state === "ACTIVE") &&
+                        (practice.state === "NEW" || practice.state === "ACTIVE" || practice.state === "SUBMITTED") &&
                         (canEditFounder || canEditStudent)
                     }
+                    refreshKey={taskRefreshKey}
                 />
             </div>
 

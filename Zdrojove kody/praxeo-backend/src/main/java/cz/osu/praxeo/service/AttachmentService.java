@@ -31,7 +31,8 @@ public class AttachmentService {
 
     @Transactional(readOnly = true)
     public List<AttachmentDto> getAttachmentsForPractice(Long practiceId) {
-        return attachmentRepository.findByPracticeId(practiceId)
+        // Vrací pouze přílohy praxe — soubory tasků jsou zobrazeny v kartě tasku
+        return attachmentRepository.findByPracticeIdAndTaskIsNull(practiceId)
                 .stream()
                 .map(attachmentMapper::toDto)
                 .toList();
@@ -83,8 +84,6 @@ public class AttachmentService {
 
         return data.getFileData();
     }
-
-
 
     @Transactional
     public boolean deleteAttachment(Long id) {

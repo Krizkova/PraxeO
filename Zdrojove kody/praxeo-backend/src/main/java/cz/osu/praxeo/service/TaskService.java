@@ -3,6 +3,7 @@ package cz.osu.praxeo.service;
 import cz.osu.praxeo.dao.PracticesRepository;
 import cz.osu.praxeo.dao.TaskRepository;
 import cz.osu.praxeo.dto.AttachmentDto;
+import cz.osu.praxeo.dao.AttachmentRepository;
 import cz.osu.praxeo.dto.TaskDto;
 import cz.osu.praxeo.entity.*;
 import cz.osu.praxeo.mapper.AttachmentMapper;
@@ -26,6 +27,7 @@ public class TaskService {
     private final TaskMapper taskMapper;
     private final AttachmentMapper attachmentMapper;
     private final UserService userService;
+    private final AttachmentRepository attachmentRepository;
 
     @Transactional(readOnly = true)
     public List<TaskDto> getTasksForPractice(Long practiceId) {
@@ -67,7 +69,10 @@ public class TaskService {
 
     @Transactional
     public void deleteTask(Long id) {
-        taskRepository.delete(canOperateWithTask(id));
+        Task task = canOperateWithTask(id);
+        // Nejprve smazat přílohy tasku, aby nedošlo k porušení cizího klíče
+        attachmentRepository.deleteAll(attachmentRepository.findByTaskId(task.getId()));
+        taskRepository.delete(task);
     }
 
     @Transactional

@@ -14,8 +14,10 @@ import {
     clearFocusStyle,
 } from "../../../utils/forms/formHelpers";
 import type { PracticeState } from "../../../utils/forms/types/practice";
+import type { EditMode } from "../../../pages/practices/PracticeDetailPage";
 
 interface Props {
+    editMode: EditMode;
     canEditFounder: boolean;
     canEditFinalEvaluation: boolean;
     canEditStudent: boolean;
@@ -35,6 +37,8 @@ interface Props {
     dateInvalid: boolean;
     minDateValue: string;
     maxDateValue: string;
+    availableStates?: PracticeState[];
+    stateHelpText?: string;
     onChangeName: (value: string) => void;
     onChangeDescription: (value: string) => void;
     onChangeCompletedAt: (value: string) => void;
@@ -64,8 +68,9 @@ const sectionSpacingStyle: React.CSSProperties = {
     marginBottom: 16,
 };
 
-// Editační formulář detailu praxe
+// Editační formulář detailu praxe — zobrazuje pouze sekce podle režimu editace
 const PracticeDetailEditForm: React.FC<Props> = ({
+                                                     editMode,
                                                      canEditFounder,
                                                      canEditFinalEvaluation,
                                                      canEditStudent,
@@ -85,6 +90,8 @@ const PracticeDetailEditForm: React.FC<Props> = ({
                                                      dateInvalid,
                                                      minDateValue,
                                                      maxDateValue,
+                                                     availableStates,
+                                                     stateHelpText,
                                                      onChangeName,
                                                      onChangeDescription,
                                                      onChangeCompletedAt,
@@ -96,9 +103,20 @@ const PracticeDetailEditForm: React.FC<Props> = ({
                                                      onSave,
                                                      onCancel,
                                                  }) => {
-    const showFounderSection = canEditFounder;
-    const showFinalEvaluationSection = canEditFinalEvaluation;
-    const showStudentEvaluationSection = canEditStudent;
+    // Zobrazení sekcí podle režimu editace
+    const showFounderSection = editMode === "founder" && canEditFounder;
+
+    // Admin v režimu founder vidí obě hodnocení přímo v jednom formuláři
+    const showFinalEvaluationSection = isAdmin
+        ? editMode === "founder"
+        : editMode === "evaluation" && canEditFinalEvaluation;
+
+    const showStudentEvaluationSection = isAdmin
+        ? editMode === "founder"
+        : editMode === "student" && canEditStudent;
+
+    // Admin pole se zobrazují pouze adminovi v founder režimu
+    const showAdminFounderSection = isAdmin && editMode === "founder";
 
     return (
         <div>
@@ -209,12 +227,14 @@ const PracticeDetailEditForm: React.FC<Props> = ({
                 </div>
             )}
 
-            {/* Editace přiřazení a stavu praxe pro admina */}
-            {isAdmin && (
+            {/* Admin může upravit přiřazení e-mailů a stav praxe */}
+            {showAdminFounderSection && (
                 <PracticeAdminFields
                     founderEmail={founderEmail}
                     studentEmail={studentEmail}
                     practiceState={practiceState}
+                    availableStates={availableStates}
+                    stateHelpText={stateHelpText}
                     onChangeFounderEmail={onChangeFounderEmail}
                     onChangeStudentEmail={onChangeStudentEmail}
                     onChangePracticeState={onChangePracticeState}

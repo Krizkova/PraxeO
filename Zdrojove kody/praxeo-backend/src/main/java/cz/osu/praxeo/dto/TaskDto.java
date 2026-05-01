@@ -1,5 +1,6 @@
 package cz.osu.praxeo.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import cz.osu.praxeo.entity.TaskStatus;
 import cz.osu.praxeo.entity.User;
 import lombok.Getter;
@@ -18,6 +19,7 @@ public class TaskDto {
     private Long authorId;
     private User founder;
     private List<String> links;
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private List<AttachmentDto> files;
     private LocalDateTime creationDate;
     private LocalDate expectedEndDate;

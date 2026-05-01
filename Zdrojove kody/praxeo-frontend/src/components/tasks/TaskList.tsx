@@ -5,6 +5,7 @@ import type { Task } from "../../api/tasksApi";
 interface Props {
     tasks: Task[];
     allowCreate: boolean;
+    currentUserEmail: string;
     onEdit: (task: Task) => void;
     onDelete: (id: number) => void;
 }
@@ -12,6 +13,7 @@ interface Props {
 const TaskList: React.FC<Props> = ({
                                        tasks,
                                        allowCreate,
+                                       currentUserEmail,
                                        onEdit,
                                        onDelete,
                                    }) => {
@@ -51,6 +53,7 @@ const TaskList: React.FC<Props> = ({
                     key={task.id}
                     task={task}
                     allowCreate={allowCreate}
+                    currentUserEmail={currentUserEmail}
                     onEdit={onEdit}
                     onDelete={onDelete}
                 />

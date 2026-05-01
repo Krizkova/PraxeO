@@ -15,6 +15,7 @@ interface Props {
     onDelete: (id: number) => void;
     onRefresh?: () => void;
     allowCreate: boolean;
+    currentUserEmail: string;
     error: string | null;
 }
 
@@ -28,6 +29,7 @@ const TaskView: React.FC<Props> = ({
                                        onDelete,
                                        onRefresh,
                                        allowCreate,
+                                       currentUserEmail,
                                        error,
                                    }) => {
     // Stav formuláře
@@ -164,7 +166,9 @@ const TaskView: React.FC<Props> = ({
             }
         }
 
+        // Refresh až po nahrání všech souborů
         if (onRefresh) {
+            await new Promise(resolve => setTimeout(resolve, 300));
             onRefresh();
         }
 
@@ -284,6 +288,7 @@ const TaskView: React.FC<Props> = ({
             <TaskList
                 tasks={tasks}
                 allowCreate={allowCreate}
+                currentUserEmail={currentUserEmail}
                 onEdit={handleEdit}
                 onDelete={onDelete}
             />

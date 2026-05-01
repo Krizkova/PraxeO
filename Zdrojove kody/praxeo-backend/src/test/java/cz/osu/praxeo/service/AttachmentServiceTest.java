@@ -92,7 +92,7 @@ class AttachmentServiceTest {
         User uploader = makeUser(5L, "ucitel@osu.cz");
         Attachment attachment = makeAttachment(1L, "dokument.pdf", "application/pdf", 100L, uploader);
 
-        when(attachmentRepository.findByPracticeId(10L)).thenReturn(List.of(attachment));
+        when(attachmentRepository.findByPracticeIdAndTaskIsNull(10L)).thenReturn(List.of(attachment));
 
         List<AttachmentDto> result = attachmentService.getAttachmentsForPractice(10L);
 
@@ -103,7 +103,7 @@ class AttachmentServiceTest {
         assertEquals("application/pdf", dto.getFileType());
         assertEquals(100L, dto.getFileSize());
         assertEquals(5L, dto.getUploadedById());
-        verify(attachmentRepository).findByPracticeId(10L);
+        verify(attachmentRepository).findByPracticeIdAndTaskIsNull(10L);
     }
 
     @Test
@@ -111,7 +111,7 @@ class AttachmentServiceTest {
     void getAttachmentsForPractice_attachmentWithoutUploader_uploaderIdIsNull() {
         Attachment attachment = makeAttachment(1L, "soubor.txt", "text/plain", 50L, null);
 
-        when(attachmentRepository.findByPracticeId(10L)).thenReturn(List.of(attachment));
+        when(attachmentRepository.findByPracticeIdAndTaskIsNull(10L)).thenReturn(List.of(attachment));
 
         List<AttachmentDto> result = attachmentService.getAttachmentsForPractice(10L);
 
@@ -121,7 +121,7 @@ class AttachmentServiceTest {
     @Test
     @DisplayName("getAttachmentsForPractice – prázdný seznam")
     void getAttachmentsForPractice_noPractices_returnsEmptyList() {
-        when(attachmentRepository.findByPracticeId(99L)).thenReturn(List.of());
+        when(attachmentRepository.findByPracticeIdAndTaskIsNull(99L)).thenReturn(List.of());
 
         List<AttachmentDto> result = attachmentService.getAttachmentsForPractice(99L);
 
