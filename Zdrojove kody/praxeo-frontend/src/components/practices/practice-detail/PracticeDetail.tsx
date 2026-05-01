@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import axios from "axios";
 import {
     getPractice,
     getAttachmentsForPractice,
@@ -19,41 +20,113 @@ import type {
     PracticeState,
 } from "../../../utils/forms/types/practice";
 import PracticeDetailView from "./PracticeDetailView";
+import ErrorDialog from "../../common/ErrorDialog";
+import type { EditMode } from "../../../pages/practices/PracticeDetailPage";
 
 interface Props {
-    editMode: boolean;
-    setEditMode: React.Dispatch<React.SetStateAction<boolean>>;
+    editMode: EditMode;
+    setEditMode: React.Dispatch<React.SetStateAction<EditMode>>;
+    onPracticeUpdated?: () => void;
+    taskRefreshKey: number;
 }
 
 // Kontejner detailu praxe zajišťující načítání dat a obsluhu akcí
-const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
+const PracticeDetail: React.FC<Props> = ({
+                                             editMode,
+                                             setEditMode,
+                                             onPracticeUpdated,
+                                             taskRefreshKey,
+                                         }) => {
     const { id } = useParams();
 
+    // Načtený detail praxe
     const [practice, setPractice] = useState<Practice | null>(null);
+
+    // Seznam příloh přiřazených k praxi
     const [attachments, setAttachments] = useState<Attachment[]>([]);
+
+    // Stav načítání detailu
     const [loading, setLoading] = useState(true);
+
+    // Chyba při úvodním načítání stránky
     const [error, setError] = useState<string | null>(null);
+
+    // Chyba z API pro zobrazení ve sdíleném dialogu
+    const [apiError, setApiError] = useState<string | null>(null);
+
+    // Signál pro formulář, že má obnovit founder pole na původní hodnotu
+    // Použije se po zavření ErrorDialogu
+    const [founderResetKey, setFounderResetKey] = useState(0);
 
     const userRole = getCookie("userRole");
     const isAdmin = userRole === "ADMIN";
 
-    // Sdílené zobrazení chybové hlášky z API
-    const showApiError = (err: unknown) => {
-        const message =
-            err instanceof Error
-                ? err.message
-                : "Nastala neočekávaná chyba.";
+    // Učitel nebo externista může upravovat pole praxe bez ohledu na autora,
+    // ale pouze dokud praxe není dokončena nebo zrušena
+    const isTeacherOrExternalWorker =
+        userRole === "TEACHER" || userRole === "EXTERNAL_WORKER";
 
-        alert("Chyba: " + message);
+    // Převede chybu z axiosu nebo běžného Error objektu na text pro dialog
+    const showApiError = (err: unknown) => {
+        if (axios.isAxiosError(err)) {
+            const responseData = err.response?.data;
+
+            if (typeof responseData === "string" && responseData.trim()) {
+                setApiError(responseData);
+                return;
+            }
+
+            if (
+                responseData &&
+                typeof responseData === "object" &&
+                "chyba" in responseData &&
+                typeof responseData.chyba === "string" &&
+                responseData.chyba.trim()
+            ) {
+                setApiError(responseData.chyba);
+                return;
+            }
+
+            if (
+                responseData &&
+                typeof responseData === "object" &&
+                "message" in responseData &&
+                typeof responseData.message === "string" &&
+                responseData.message.trim()
+            ) {
+                setApiError(responseData.message);
+                return;
+            }
+
+            if (err.message?.trim()) {
+                setApiError(err.message);
+                return;
+            }
+        }
+
+        if (err instanceof Error && err.message.trim()) {
+            setApiError(err.message);
+            return;
+        }
+
+        setApiError("Nastala neočekávaná chyba.");
     };
 
-    // Uloží novou verzi praxe a případně ukončí režim editace
+    // Uloží novou verzi praxe do lokálního stavu
+    // a případně ukončí režim editace
     const applyUpdatedPractice = (updated: Practice, closeEditMode = false) => {
         setPractice(updated);
 
         if (closeEditMode) {
             setEditMode(false);
         }
+    };
+
+    // Zavře chybový dialog a vyšle signál formuláři,
+    // aby obnovil founder hodnoty na původní stav
+    const handleCloseErrorDialog = () => {
+        setApiError(null);
+        setFounderResetKey((prev) => prev + 1);
     };
 
     // Načtení detailu praxe a jejích příloh podle ID z URL
@@ -66,6 +139,7 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
 
         setLoading(true);
         setError(null);
+        setApiError(null);
 
         getPractice(id)
             .then((practiceDto) => {
@@ -83,20 +157,47 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             });
     }, [id]);
 
-    // Bez načtených dat nelze zobrazit detail
+    // Bez načtených dat nelze vykreslit detail
     if (!practice) {
         return null;
     }
 
-    const canEditFounder = isAdmin || practice.canEditFounderFields;
-    const canEditStudent = isAdmin || practice.canEditStudentFields;
-    const canEditFinalEvaluation = isAdmin || practice.canEditFinalEvaluation;
+    // Práva pro úpravu founder části
+    const canEditFounder =
+        isAdmin ||
+        (isTeacherOrExternalWorker &&
+            practice.state !== "COMPLETED" &&
+            practice.state !== "CANCELED") ||
+        practice.canEditFounderFields;
+
+    // Admin nemůže odevzdávat praxi za studenta,
+    // proto se řídíme pouze backendovým oprávněním
+    const canEditStudent = practice.canEditStudentFields;
+
+    // Finální hodnocení může admin, učitel nebo externista upravovat,
+    // pokud je praxe ve stavu SUBMITTED
+    const canEditFinalEvaluation =
+        isAdmin || isTeacherOrExternalWorker
+            ? practice.state === "SUBMITTED"
+            : practice.canEditFinalEvaluation;
+
+    // Změna hlavního stavu praxe je možná pro admina vždy,
+    // jinak jen pokud to backend dovolí a praxe není uzavřená
     const canChangeState = isAdmin || (practice.canChangeState && !practice.closed);
 
-    // Admin nemá automaticky právo nahrávat soubory
-    const canUpload = practice.canUploadAttachments;
+    // Nahrávání souborů:
+    // - admin vždy
+    // - učitel/externista dokud praxe není COMPLETED nebo CANCELED
+    // - student pouze dokud praxi neodevzdal
+    const canUpload = isAdmin
+        ? true
+        : isTeacherOrExternalWorker
+            ? practice.state !== "COMPLETED" && practice.state !== "CANCELED"
+            : practice.canUploadAttachments && practice.state !== "SUBMITTED";
 
-    // Mazání souborů: admin všude, ostatní pokud jde o jejich práci
+    // Mazání příloh:
+    // - admin vždy
+    // - ostatní pokud mohou upravovat některou svou část praxe
     const canDeleteAttachment =
         isAdmin ||
         practice.canEditFounderFields ||
@@ -114,9 +215,12 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             return;
         }
 
+        setApiError(null);
+
         updatePractice(practice.id, data)
             .then((updated) => {
                 applyUpdatedPractice(updated, true);
+                onPracticeUpdated?.();
             })
             .catch(showApiError);
     };
@@ -126,6 +230,8 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
         if (!canUpload) {
             return;
         }
+
+        setApiError(null);
 
         uploadAttachment(practice.id, file)
             .then((newAttachment) => {
@@ -140,6 +246,8 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             return;
         }
 
+        setApiError(null);
+
         deleteAttachment(attachmentId)
             .then(() => {
                 setAttachments((prev) =>
@@ -151,6 +259,8 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
 
     // Stažení přílohy do zařízení uživatele
     const handleDownloadAttachment = (attachmentId: number, title: string) => {
+        setApiError(null);
+
         downloadAttachment(attachmentId)
             .then((response) => {
                 const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -168,59 +278,79 @@ const PracticeDetail: React.FC<Props> = ({ editMode, setEditMode }) => {
             .catch(showApiError);
     };
 
-    // Změna hlavního stavu praxe — admin může měnit na jakýkoliv stav
+    // Změna hlavního stavu praxe
     const handleChangeState = (state: PracticeState) => {
         if (!canChangeState) {
             return;
         }
 
+        setApiError(null);
+
         changePracticeState(practice.id, state)
             .then((updated) => {
                 applyUpdatedPractice(updated, true);
+                onPracticeUpdated?.();
             })
             .catch(showApiError);
     };
 
     // Přihlášení nebo odhlášení studenta z praxe
     const handleAssignStudent = (assign: boolean) => {
+        setApiError(null);
+
         assignStudent(practice.id, assign)
             .then((updated) => {
                 applyUpdatedPractice(updated);
+                onPracticeUpdated?.();
             })
             .catch(showApiError);
     };
 
     // Změna studentského stavu praxe
     const handleStudentState = (state: "ACTIVE" | "SUBMITTED") => {
+        setApiError(null);
+
         changeStudentState(practice.id, state)
             .then((updated) => {
                 applyUpdatedPractice(updated);
+                onPracticeUpdated?.();
             })
             .catch(showApiError);
     };
 
     return (
-        <PracticeDetailView
-            practice={practice}
-            loading={loading}
-            error={error}
-            attachments={attachments}
-            editMode={editMode}
-            setEditMode={setEditMode}
-            canEditFounder={canEditFounder}
-            canEditStudent={canEditStudent}
-            canEditFinalEvaluation={canEditFinalEvaluation}
-            canChangeState={canChangeState}
-            canUpload={canUpload}
-            canDeleteAttachment={canDeleteAttachment}
-            onUpdate={handleUpdate}
-            onFileUpload={handleFileUpload}
-            onDeleteAttachment={handleDeleteAttachment}
-            onDownloadAttachment={handleDownloadAttachment}
-            onChangeState={handleChangeState}
-            onAssignStudent={handleAssignStudent}
-            onChangeStudentState={handleStudentState}
-        />
+        <>
+            {apiError && (
+                <ErrorDialog
+                    message={apiError}
+                    onClose={handleCloseErrorDialog}
+                />
+            )}
+
+            <PracticeDetailView
+                practice={practice}
+                loading={loading}
+                error={error}
+                attachments={attachments}
+                editMode={editMode}
+                setEditMode={setEditMode}
+                canEditFounder={canEditFounder}
+                canEditStudent={canEditStudent}
+                canEditFinalEvaluation={canEditFinalEvaluation}
+                canChangeState={canChangeState}
+                canUpload={canUpload}
+                canDeleteAttachment={canDeleteAttachment}
+                onUpdate={handleUpdate}
+                onFileUpload={handleFileUpload}
+                onDeleteAttachment={handleDeleteAttachment}
+                onDownloadAttachment={handleDownloadAttachment}
+                onChangeState={handleChangeState}
+                onAssignStudent={handleAssignStudent}
+                onChangeStudentState={handleStudentState}
+                taskRefreshKey={taskRefreshKey}
+                founderResetKey={founderResetKey}
+            />
+        </>
     );
 };
 

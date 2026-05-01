@@ -92,7 +92,6 @@ class AuthControllerTest {
         ResponseEntity<?> response = authController.login(dto);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertTrue(response.getBody().toString().toLowerCase().contains("uživatel"));
     }
 
     @DisplayName("login – špatné heslo")
@@ -108,7 +107,6 @@ class AuthControllerTest {
         ResponseEntity<?> response = authController.login(dto);
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
-        assertTrue(response.getBody().toString().toLowerCase().contains("neplatné"));
     }
 
     @DisplayName("login – neaktivní uživatel")

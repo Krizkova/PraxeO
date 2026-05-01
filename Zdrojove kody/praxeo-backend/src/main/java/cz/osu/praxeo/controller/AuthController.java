@@ -33,9 +33,14 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody LoginRequestDto loginRequestDto) {
         User user = userService.findByEmail(loginRequestDto.getEmail());
         if (user == null) {
-            return ResponseEntity
-                    .status(HttpStatus.UNAUTHORIZED).body("");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("");
         }
+
+        // Přidat sem:
+        if (!user.isActive()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("");
+        }
+
         if (!passwordEncoder.matches(loginRequestDto.getPassword(), user.getPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("");
         }
