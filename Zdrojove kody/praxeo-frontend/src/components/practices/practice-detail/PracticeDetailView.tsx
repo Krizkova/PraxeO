@@ -34,6 +34,7 @@ interface PracticeDetailViewProps {
     onChangeState: (state: PracticeState) => void;
     onAssignStudent: (assign: boolean) => void;
     onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
+    onExport: () => void;
     taskRefreshKey: number;
     founderResetKey: number;
 }
@@ -61,6 +62,7 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                                                                    onChangeState,
                                                                    onAssignStudent,
                                                                    onChangeStudentState,
+                                                                   onExport,
                                                                    taskRefreshKey,
                                                                    founderResetKey,
                                                                }) => {
@@ -300,6 +302,7 @@ const PracticeDetailView: React.FC<PracticeDetailViewProps> = ({
                         onAssignStudent={onAssignStudent}
                         onChangeStudentState={onChangeStudentState}
                         onChangeState={onChangeState}
+                        onExport={onExport}
                         taskRefreshKey={taskRefreshKey}
                     />
                 )}

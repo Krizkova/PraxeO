@@ -136,3 +136,9 @@ export const changeStudentState = async (
 
     return response.data;
 };
+
+export const exportPractice = async (id: number) => {
+    return api.get(`/practices/${id}/export`, {
+        responseType: "blob",
+    });
+};

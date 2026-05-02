@@ -22,6 +22,7 @@ interface Props {
     onAssignStudent: (assign: boolean) => void;
     onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
     onChangeState: (state: "CANCELED" | "COMPLETED") => void;
+    onExport: () => void;
     taskRefreshKey: number;
 }
 
@@ -37,6 +38,7 @@ const PracticeDetailReadView: React.FC<Props> = ({
                                                      onAssignStudent,
                                                      onChangeStudentState,
                                                      onChangeState,
+                                                     onExport,
                                                      taskRefreshKey,
                                                  }) => {
     const btnDanger: React.CSSProperties = {
@@ -105,6 +107,15 @@ const PracticeDetailReadView: React.FC<Props> = ({
                             Vrátit do aktivního stavu
                         </SecondaryButton>
                     )}
+
+                {practice.state === "COMPLETED" && (
+                    <button
+                        style={btnBlue}
+                        onClick={onExport}
+                    >
+                        Stáhnout report
+                    </button>
+                )}
             </div>
 
             <div style={{ marginBottom: 16 }}>

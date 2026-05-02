@@ -11,6 +11,7 @@ import {
     changePracticeState,
     assignStudent,
     changeStudentState,
+    exportPractice,
 } from "../../../api/practicesApi";
 import { getCookie } from "../../../utils/forms/cookies";
 import type {
@@ -318,6 +319,28 @@ const PracticeDetail: React.FC<Props> = ({
             .catch(showApiError);
     };
 
+    const handleExport = () => {
+        if (!practice) return;
+
+        setApiError(null);
+
+        exportPractice(practice.id)
+            .then((response) => {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement("a");
+
+                link.href = url;
+                link.download = `practice-export-${practice.id}.html`;
+
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                window.URL.revokeObjectURL(url);
+            })
+            .catch(showApiError);
+    };
+
     return (
         <>
             {apiError && (
@@ -347,6 +370,7 @@ const PracticeDetail: React.FC<Props> = ({
                 onChangeState={handleChangeState}
                 onAssignStudent={handleAssignStudent}
                 onChangeStudentState={handleStudentState}
+                onExport={handleExport}
                 taskRefreshKey={taskRefreshKey}
                 founderResetKey={founderResetKey}
             />

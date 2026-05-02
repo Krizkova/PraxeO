@@ -70,4 +70,13 @@ public class PracticesController {
     ) {
         return ResponseEntity.ok(practicesService.changeStudentState(id, state));
     }
+
+    @GetMapping("/{id}/export")
+    public ResponseEntity<byte[]> exportPractice(@PathVariable Long id) {
+        byte[] html = practicesService.generateExportHtml(id);
+        return ResponseEntity.ok()
+                .header("Content-Type", "text/html; charset=UTF-8")
+                .header("Content-Disposition", "attachment; filename=\"practice-report-" + id + ".html\"")
+                .body(html);
+    }
 }

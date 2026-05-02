@@ -4,9 +4,12 @@ import cz.osu.praxeo.dao.AttachmentRepository;
 import cz.osu.praxeo.dao.PracticesRepository;
 import cz.osu.praxeo.dao.TaskRepository;
 import cz.osu.praxeo.dto.PracticesDto;
+import cz.osu.praxeo.entity.Attachment;
 import cz.osu.praxeo.entity.PracticeState;
 import cz.osu.praxeo.entity.Practices;
 import cz.osu.praxeo.entity.Role;
+import cz.osu.praxeo.entity.Task;
+import cz.osu.praxeo.entity.TaskStatus;
 import cz.osu.praxeo.entity.User;
 import cz.osu.praxeo.mapper.PracticesMapper;
 import lombok.RequiredArgsConstructor;
@@ -15,8 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -448,5 +453,113 @@ public class PracticesService {
         practicesRepository.save(practice);
 
         return getPracticeById(practice.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] generateExportHtml(Long id) {
+        Practices practice = practicesRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Praxe neexistuje"));
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<!DOCTYPE html>\n<html lang=\"cs\">\n<head>\n");
+        sb.append("<meta charset=\"UTF-8\">\n");
+        sb.append("<title>Export praxe: ").append(practice.getName()).append("</title>\n");
+        sb.append("<style>\n");
+        sb.append("body { font-family: Arial, sans-serif; line-height: 1.6; margin: 40px; color: #333; }\n");
+        sb.append("h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 10px; }\n");
+        sb.append("h2 { color: #34495e; margin-top: 30px; border-bottom: 1px solid #eee; }\n");
+        sb.append(".section { margin-bottom: 20px; }\n");
+        sb.append(".label { font-weight: bold; width: 180px; display: inline-block; }\n");
+        sb.append(".task { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 5px; }\n");
+        sb.append(".task-title { font-weight: bold; font-size: 1.1em; color: #2980b9; }\n");
+        sb.append(".task-meta { font-size: 0.9em; color: #666; margin-bottom: 10px; }\n");
+        sb.append(".task-desc { margin-top: 5px; }\n");
+        sb.append(".evaluation { background: #f9f9f9; padding: 10px; border-left: 4px solid #3498db; margin-top: 10px; }\n");
+        sb.append(".attachment-list { margin-top: 10px; padding-left: 20px; }\n");
+        sb.append(".link-list { margin-top: 10px; padding-left: 20px; }\n");
+        sb.append("</style>\n</head>\n<body>\n");
+
+        sb.append("<h1>Praxe: ").append(practice.getName()).append("</h1>\n");
+
+        sb.append("<div class=\"section\">\n");
+        sb.append("<p><span class=\"label\">Název:</span> ").append(practice.getName()).append("</p>\n");
+        sb.append("<p><span class=\"label\">Popis:</span> ").append(practice.getDescription() != null ? practice.getDescription() : "-").append("</p>\n");
+        sb.append("<p><span class=\"label\">Zakladatel:</span> ").append(practice.getFounder() != null ? practice.getFounder().getEmail() : "-").append("</p>\n");
+        sb.append("<p><span class=\"label\">Student:</span> ").append(practice.getStudent() != null ? practice.getStudent().getEmail() : "-").append("</p>\n");
+        sb.append("<p><span class=\"label\">Vytvořeno:</span> ").append(practice.getCreatedAt() != null ? practice.getCreatedAt().format(dtf) : "-").append("</p>\n");
+        sb.append("<p><span class=\"label\">Vybráno:</span> ").append(practice.getSelectedAt() != null ? practice.getSelectedAt().format(dtf) : "-").append("</p>\n");
+        sb.append("<p><span class=\"label\">Datum dokončení:</span> ").append(practice.getCompletedAt() != null ? practice.getCompletedAt().format(dtf) : "—").append("</p>\n");
+        
+        String stateText = switch (practice.getState()) {
+            case NEW -> "Nová";
+            case ACTIVE -> "Aktivní";
+            case SUBMITTED -> "Odevzdaná";
+            case COMPLETED -> "Dokončený";
+            case CANCELED -> "Zrušená";
+        };
+        sb.append("<p><span class=\"label\">Stav:</span> ").append(stateText).append("</p>\n");
+        sb.append("</div>\n");
+
+        if (practice.getFinalEvaluation() != null && !practice.getFinalEvaluation().isEmpty()) {
+            sb.append("<h2>Finální hodnocení</h2>\n");
+            sb.append("<div class=\"evaluation\">").append(practice.getFinalEvaluation().replace("\n", "<br>")).append("</div>\n");
+        }
+
+        if (practice.getStudentEvaluation() != null && !practice.getStudentEvaluation().isEmpty()) {
+            sb.append("<h2>Hodnocení studenta</h2>\n");
+            sb.append("<div class=\"evaluation\">").append(practice.getStudentEvaluation().replace("\n", "<br>")).append("</div>\n");
+        }
+
+        List<Task> exportTasks = practice.getTasks().stream()
+                .filter(Task::isReportFlag)
+                .collect(Collectors.toList());
+
+        if (!exportTasks.isEmpty()) {
+            sb.append("<h2>Úkoly</h2>\n");
+            for (Task task : exportTasks) {
+                sb.append("<div class=\"task\">\n");
+                String taskStatus = task.getStatus() == TaskStatus.ACTIVE ? "Aktivní" : "Dokončený";
+                sb.append("<div class=\"task-title\">").append(task.getTitle()).append(" ").append(taskStatus).append(" Reportuje se</div>\n");
+                
+                String authorEmail = task.getFounder() != null ? task.getFounder().getEmail() : "-";
+                String createdDate = task.getCreationDate() != null ? task.getCreationDate().format(dtf) : "-";
+                sb.append("<div class=\"task-meta\">Autor: ").append(authorEmail).append(" · Vytvořeno: ").append(createdDate).append("</div>\n");
+                
+                sb.append("<div class=\"task-desc\">").append(task.getDescription() != null ? task.getDescription().replace("\n", "<br>") : "-").append("</div>\n");
+                
+                if (task.getLinks() != null && !task.getLinks().isEmpty()) {
+                    sb.append("<div><strong>Odkazy:</strong></div>\n");
+                    sb.append("<ul class=\"link-list\">\n");
+                    for (int i = 0; i < task.getLinks().size(); i++) {
+                        String link = task.getLinks().get(i);
+                        sb.append("<li>[").append(i + 1).append("] <a href=\"").append(link).append("\">").append(link).append("</a></li>\n");
+                    }
+                    sb.append("</ul>\n");
+                }
+
+                List<Attachment> attachments = attachmentRepository.findByTaskId(task.getId());
+                if (!attachments.isEmpty()) {
+                    sb.append("<div><strong>Soubory:</strong></div>\n");
+                    sb.append("<ul class=\"attachment-list\">\n");
+                    for (Attachment attr : attachments) {
+                        sb.append("<li>").append(attr.getTitle()).append("</li>\n");
+                    }
+                    sb.append("</ul>\n");
+                }
+
+                if (task.getFinalEvaluation() != null && !task.getFinalEvaluation().isEmpty()) {
+                    sb.append("<div class=\"evaluation\">\n");
+                    sb.append("<strong>Hodnocení:</strong><br>").append(task.getFinalEvaluation().replace("\n", "<br>"));
+                    sb.append("</div>\n");
+                }
+                sb.append("</div>\n");
+            }
+        }
+
+        sb.append("</body>\n</html>");
+
+        return sb.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
     }
 }
