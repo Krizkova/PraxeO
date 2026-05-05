@@ -70,6 +70,7 @@ describe("ResetPassword", () => {
     beforeEach(() => {
         vi.clearAllMocks();
         setLatestProps(undefined as any);
+        mockSearchParams.set("token", "test-token");
         vi.mocked(getRoleByToken).mockResolvedValue({ role: "STUDENT" });
     });
 
@@ -135,6 +136,47 @@ describe("ResetPassword", () => {
         expect(latestProps().errorMessage).toBe("Token expiroval");
         expect(loginUser).not.toHaveBeenCalled();
         expect(mockAuthLogin).not.toHaveBeenCalled();
+        expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it("sets token error when reset token is missing from URL", async () => {
+        mockSearchParams.delete("token");
+
+        render(
+            <MemoryRouter>
+                <ResetPassword />
+            </MemoryRouter>
+        );
+
+        await act(async () => {
+            await Promise.resolve();
+        });
+
+        expect(latestProps().tokenInvalid).toBe(true);
+        expect(latestProps().errorMessage).toContain("Tento odkaz");
+        expect(getRoleByToken).not.toHaveBeenCalled();
+        expect(resetPassword).not.toHaveBeenCalled();
+    });
+
+    it("does not call reset API when passwords do not match", async () => {
+        render(
+            <MemoryRouter>
+                <ResetPassword />
+            </MemoryRouter>
+        );
+
+        act(() => {
+            latestProps().setPassword("Strong123");
+            latestProps().setPassword2("Different123");
+        });
+
+        await act(async () => {
+            await latestProps().handleSubmit({ preventDefault: vi.fn() } as any);
+        });
+
+        expect(latestProps().errorMessage).toBe("Hesla se neshodují.");
+        expect(resetPassword).not.toHaveBeenCalled();
+        expect(loginUser).not.toHaveBeenCalled();
         expect(mockNavigate).not.toHaveBeenCalled();
     });
 
