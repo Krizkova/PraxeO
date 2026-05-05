@@ -36,7 +36,7 @@ describe("CreatePracticeView", () => {
             <CreatePracticeView
                 name="Praxe A"
                 description="Popis"
-                completedAt="2026-05-01"
+                completedAt="2026-06-01"
                 loading={true}
                 error={null}
                 onChangeName={vi.fn()}
@@ -52,7 +52,7 @@ describe("CreatePracticeView", () => {
             <CreatePracticeView
                 name="Praxe A"
                 description="Popis"
-                completedAt="2026-05-01"
+                completedAt="2026-06-01"
                 loading={false}
                 error={null}
                 onChangeName={vi.fn()}
@@ -72,7 +72,7 @@ describe("CreatePracticeView", () => {
             <CreatePracticeView
                 name="Praxe A"
                 description="Popis"
-                completedAt="2026-05-01"
+                completedAt="2026-06-01"
                 loading={false}
                 error={null}
                 onChangeName={vi.fn()}
