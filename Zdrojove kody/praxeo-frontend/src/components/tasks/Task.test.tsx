@@ -1,4 +1,4 @@
-﻿import { beforeEach, describe, expect, it, vi } from "vitest";
+﻿import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import Task from "./Task";
@@ -39,6 +39,10 @@ describe("Task", () => {
         vi.clearAllMocks();
         vi.mocked(updateTask).mockResolvedValue({ id: 99, title: "Updated", description: "Updated" });
         vi.mocked(uploadTaskAttachment).mockResolvedValue({});
+    });
+
+    afterEach(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 350));
     });
 
     it("creates a new task from UI and renders it in list", async () => {
@@ -136,7 +140,7 @@ describe("Task", () => {
             title: "Vlastní úkol",
             description: "Starý popis",
             links: ["https://old.cz"],
-            expectedEndDate: "2026-05-01",
+            expectedEndDate: "2026-06-01",
             reportFlag: false,
         });
         const updatedTask = createTaskItem({
@@ -165,7 +169,7 @@ describe("Task", () => {
             target: { value: "https://new.cz" },
         });
         fireEvent.change(container.querySelector('input[type="date"]') as HTMLInputElement, {
-            target: { value: "2026-06-01" },
+            target: { value: "2026-07-01" },
         });
         fireEvent.click(screen.getByLabelText(/reportovat/i));
         fireEvent.click(screen.getByRole("button", { name: /uložit změny/i }));
@@ -176,7 +180,7 @@ describe("Task", () => {
                 title: "Upravený úkol",
                 description: "Nový popis",
                 links: ["https://new.cz"],
-                expectedEndDate: "2026-06-01",
+                expectedEndDate: "2026-07-01",
                 reportFlag: true,
                 finalEvaluation: undefined,
             });
@@ -256,6 +260,7 @@ describe("Task", () => {
         expect(await screen.findByText("Delete me")).toBeInTheDocument();
 
         fireEvent.click(screen.getByTitle("Smazat task"));
+        fireEvent.click(screen.getByRole("button", { name: /^smazat$/i }));
 
         await waitFor(() => {
             expect(deleteTask).toHaveBeenCalledWith(1);
@@ -276,6 +281,7 @@ describe("Task", () => {
 
         expect(await screen.findByText("Keep me")).toBeInTheDocument();
         fireEvent.click(screen.getByTitle("Smazat task"));
+        fireEvent.click(screen.getByRole("button", { name: /^smazat$/i }));
 
         await waitFor(() => {
             expect(alertSpy).toHaveBeenCalled();
@@ -285,3 +291,4 @@ describe("Task", () => {
         alertSpy.mockRestore();
     });
 });
+
