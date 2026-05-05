@@ -111,6 +111,42 @@ describe("TaskCard", () => {
         expect(deleteAttachment).not.toHaveBeenCalled();
     });
 
+    it("deletes attachment after confirmation", async () => {
+        vi.mocked(deleteAttachment).mockResolvedValue({} as any);
+
+        render(
+            <TaskCard
+                task={baseTask}
+                allowCreate={true}
+                currentUserEmail="autor@osu.cz"
+                onEdit={vi.fn()}
+                onDelete={vi.fn()}
+            />
+        );
+
+        fireEvent.click(screen.getByTitle("Smazat"));
+        fireEvent.click(screen.getAllByRole("button", { name: /smazat/i })[0]);
+
+        await waitFor(() => {
+            expect(deleteAttachment).toHaveBeenCalledWith(5);
+        });
+    });
+
+    it("hides attachment delete action when task cannot be edited", () => {
+        render(
+            <TaskCard
+                task={baseTask}
+                allowCreate={false}
+                currentUserEmail="student@osu.cz"
+                onEdit={vi.fn()}
+                onDelete={vi.fn()}
+            />
+        );
+
+        expect(screen.getByTitle("Stáhnout")).toBeInTheDocument();
+        expect(screen.queryByTitle("Smazat")).not.toBeInTheDocument();
+    });
+
     it("hides task actions for completed task", () => {
         render(
             <TaskCard

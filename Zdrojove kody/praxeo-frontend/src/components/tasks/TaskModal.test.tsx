@@ -134,6 +134,42 @@ describe("TaskModal", () => {
         expect(deleteAttachment).not.toHaveBeenCalled();
     });
 
+    it("deletes existing attachment in edit mode after confirmation", async () => {
+        vi.mocked(deleteAttachment).mockResolvedValue({} as any);
+
+        const props = createProps({
+            editingTask: {
+                id: 20,
+                title: "Task A",
+                description: "Popis",
+                files: [{ id: 7, title: "vystup.pdf" }],
+            },
+        });
+
+        render(<TaskModal {...props} />);
+
+        fireEvent.click(screen.getByTitle("Smazat"));
+        fireEvent.click(screen.getAllByRole("button", { name: /smazat/i })[0]);
+
+        await waitFor(() => {
+            expect(deleteAttachment).toHaveBeenCalledWith(7);
+        });
+    });
+
+    it("validates required fields before creating task", () => {
+        const props = createProps({
+            title: "",
+            description: "",
+        });
+
+        render(<TaskModal {...props} />);
+
+        fireEvent.click(screen.getByRole("button", { name: /^p/i }));
+
+        expect(props.handleSubmit).not.toHaveBeenCalled();
+        expect(screen.getAllByText(/povinn/i)).not.toHaveLength(0);
+    });
+
     it("submits final evaluation in edit mode", () => {
         const props = createProps({
             editingTask: {
