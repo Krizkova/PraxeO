@@ -59,6 +59,9 @@ const createProps = (overrides: Partial<any> = {}) => ({
     onChangeState: vi.fn(),
     onAssignStudent: vi.fn(),
     onChangeStudentState: vi.fn(),
+    onExport: vi.fn(),
+    taskRefreshKey: 0,
+    founderResetKey: 0,
     ...overrides,
 });
 
@@ -81,12 +84,13 @@ describe("PracticeDetailView", () => {
         expect(screen.getByText(/Detail popisu/i)).toBeInTheDocument();
 
         fireEvent.click(screen.getByTitle(/upravit praxi/i));
-        expect(props.setEditMode).toHaveBeenCalledWith(true);
+        expect(props.setEditMode).toHaveBeenCalledWith("founder");
 
         expect(screen.getByTestId("task-component")).toBeInTheDocument();
         expect(taskMock).toHaveBeenCalledWith({
             practiceId: 77,
             allowCreate: true,
+            refreshKey: 0,
         });
     });
 
@@ -121,7 +125,7 @@ describe("PracticeDetailView", () => {
         expect(props.onAssignStudent).toHaveBeenCalledWith(true);
     });
 
-    it("shows student active actions and calls unassign", () => {
+    it("shows student active submit action disabled without evaluation", () => {
         setUserRole("STUDENT");
         const props = createProps({
             canEdit: false,
@@ -135,9 +139,6 @@ describe("PracticeDetailView", () => {
         });
 
         render(<PracticeDetailView {...props} />);
-
-        fireEvent.click(screen.getByRole("button", { name: /odhl/i }));
-        expect(props.onAssignStudent).toHaveBeenCalledWith(false);
 
         expect(screen.getByRole("button", { name: /odevzd/i })).toBeDisabled();
     });
@@ -163,7 +164,7 @@ describe("PracticeDetailView", () => {
     it("submits full admin payload in edit mode", () => {
         setUserRole("ADMIN");
         const props = createProps({
-            editMode: true,
+            editMode: "founder",
             canEditFounder: true,
             canEditStudent: true,
             canEditFinalEvaluation: true,
