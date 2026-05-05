@@ -36,6 +36,7 @@ describe("TaskCard", () => {
             <TaskCard
                 task={baseTask}
                 allowCreate={true}
+                currentUserEmail="autor@osu.cz"
                 onEdit={vi.fn()}
                 onDelete={vi.fn()}
             />
@@ -57,6 +58,7 @@ describe("TaskCard", () => {
             <TaskCard
                 task={baseTask}
                 allowCreate={true}
+                currentUserEmail="autor@osu.cz"
                 onEdit={onEdit}
                 onDelete={onDelete}
             />
@@ -78,6 +80,7 @@ describe("TaskCard", () => {
             <TaskCard
                 task={baseTask}
                 allowCreate={true}
+                currentUserEmail="autor@osu.cz"
                 onEdit={vi.fn()}
                 onDelete={vi.fn()}
             />
@@ -92,23 +95,20 @@ describe("TaskCard", () => {
     });
 
     it("does not delete attachment when confirmation is declined", async () => {
-        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
-
         render(
             <TaskCard
                 task={baseTask}
                 allowCreate={true}
+                currentUserEmail="autor@osu.cz"
                 onEdit={vi.fn()}
                 onDelete={vi.fn()}
             />
         );
 
         fireEvent.click(screen.getByTitle("Smazat"));
+        fireEvent.click(screen.getByRole("button", { name: /zrušit/i }));
 
-        expect(confirmSpy).toHaveBeenCalled();
         expect(deleteAttachment).not.toHaveBeenCalled();
-
-        confirmSpy.mockRestore();
     });
 
     it("hides task actions for completed task", () => {
@@ -116,6 +116,7 @@ describe("TaskCard", () => {
             <TaskCard
                 task={{ ...baseTask, status: "COMPLETED" }}
                 allowCreate={true}
+                currentUserEmail="autor@osu.cz"
                 onEdit={vi.fn()}
                 onDelete={vi.fn()}
             />
