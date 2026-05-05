@@ -13,3 +13,4 @@ dist/
 .env.production
 Zdrojove kody/backend-log.txt
 Zdrojove kody/praxeo-frontend/.env1.production
+manual-ui-test-findings.md
