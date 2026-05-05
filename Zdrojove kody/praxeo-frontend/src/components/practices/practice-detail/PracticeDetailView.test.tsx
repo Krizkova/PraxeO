@@ -1,5 +1,5 @@
 ﻿import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 import PracticeDetailView from "./PracticeDetailView";
 
@@ -215,6 +215,99 @@ describe("PracticeDetailView", () => {
             studentEmail: "newstudent@osu.cz",
             state: "COMPLETED",
         });
+    });
+
+    it("shows report export action only for completed practice", () => {
+        setUserRole("TEACHER");
+        const props = createProps({
+            practice: {
+                ...basePractice,
+                state: "COMPLETED",
+            },
+        });
+
+        const { rerender } = render(<PracticeDetailView {...props} />);
+
+        fireEvent.click(screen.getByRole("button", { name: /report/i }));
+        expect(props.onExport).toHaveBeenCalledTimes(1);
+
+        rerender(
+            <PracticeDetailView
+                {...props}
+                practice={{ ...basePractice, state: "ACTIVE" }}
+            />
+        );
+
+        expect(screen.queryByRole("button", { name: /report/i })).not.toBeInTheDocument();
+    });
+
+    it("normalizes empty student email and keeps only allowed admin state without student", async () => {
+        setUserRole("ADMIN");
+        const props = createProps({
+            editMode: "founder",
+            canEditFounder: true,
+            canEditStudent: true,
+            canEditFinalEvaluation: true,
+            practice: {
+                ...basePractice,
+                state: "ACTIVE",
+            },
+        });
+
+        const { container } = render(<PracticeDetailView {...props} />);
+
+        fireEvent.change(screen.getByDisplayValue("student@osu.cz"), {
+            target: { value: " " },
+        });
+
+        const stateSelect = container.querySelector("select") as HTMLSelectElement;
+
+        await waitFor(() => {
+            expect(stateSelect.value).toBe("NEW");
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: /ulo/i }));
+
+        expect(props.onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            studentEmail: null,
+            state: "NEW",
+        }));
+    });
+
+    it("switches admin state from NEW to ACTIVE when student is assigned", async () => {
+        setUserRole("ADMIN");
+        const props = createProps({
+            editMode: "founder",
+            canEditFounder: true,
+            canEditStudent: true,
+            canEditFinalEvaluation: true,
+            practice: {
+                ...basePractice,
+                state: "NEW",
+                studentEmail: null,
+            },
+        });
+
+        const { container } = render(<PracticeDetailView {...props} />);
+        const inputs = Array.from(container.querySelectorAll("input"));
+        const studentEmailInput = inputs[inputs.length - 1] as HTMLInputElement;
+
+        fireEvent.change(studentEmailInput, {
+            target: { value: "assigned.student@osu.cz" },
+        });
+
+        const stateSelect = container.querySelector("select") as HTMLSelectElement;
+
+        await waitFor(() => {
+            expect(stateSelect.value).toBe("ACTIVE");
+        });
+
+        fireEvent.click(screen.getByRole("button", { name: /ulo/i }));
+
+        expect(props.onUpdate).toHaveBeenCalledWith(expect.objectContaining({
+            studentEmail: "assigned.student@osu.cz",
+            state: "ACTIVE",
+        }));
     });
 
 });

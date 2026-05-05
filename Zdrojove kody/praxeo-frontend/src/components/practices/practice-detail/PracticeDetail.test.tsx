@@ -4,9 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import PracticeDetail from "./PracticeDetail";
 import {
+    assignStudent,
     changePracticeState,
+    changeStudentState,
     deleteAttachment,
     downloadAttachment,
+    exportPractice,
     getAttachmentsForPractice,
     getPractice,
     updatePractice,
@@ -31,6 +34,9 @@ type PracticeDetailViewProps = {
     onDeleteAttachment: (id: number) => void;
     onDownloadAttachment: (id: number, title: string) => void;
     onChangeState: (state: "CANCELED" | "COMPLETED") => void;
+    onAssignStudent: (assign: boolean) => void;
+    onChangeStudentState: (state: "ACTIVE" | "SUBMITTED") => void;
+    onExport: () => void;
 };
 
 const { mockSetEditMode, getLatestProps, setLatestProps } = vi.hoisted(() => {
@@ -74,6 +80,9 @@ vi.mock("../../../api/practicesApi", () => ({
     downloadAttachment: vi.fn(),
     updatePractice: vi.fn(),
     changePracticeState: vi.fn(),
+    assignStudent: vi.fn(),
+    changeStudentState: vi.fn(),
+    exportPractice: vi.fn(),
 }));
 
 describe("PracticeDetail", () => {
@@ -117,6 +126,8 @@ describe("PracticeDetail", () => {
             canUploadAttachments: false,
         });
         vi.mocked(downloadAttachment).mockResolvedValue({ data: new Blob(["x"]) } as any);
+        vi.mocked(assignStudent).mockResolvedValue({ id: 55, name: "Praxe assigned" });
+        vi.mocked(changeStudentState).mockResolvedValue({ id: 55, name: "Praxe submitted" });
 
         const createObjectURLSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:url");
         const appendSpy = vi.spyOn(document.body, "appendChild");
@@ -170,6 +181,18 @@ describe("PracticeDetail", () => {
         expect(changePracticeState).toHaveBeenCalledWith(55, "COMPLETED");
         expect(mockSetEditMode).toHaveBeenCalledWith(false);
 
+        await act(async () => {
+            latestProps().onAssignStudent(true);
+            await Promise.resolve();
+        });
+        expect(assignStudent).toHaveBeenCalledWith(55, true);
+
+        await act(async () => {
+            latestProps().onChangeStudentState("SUBMITTED");
+            await Promise.resolve();
+        });
+        expect(changeStudentState).toHaveBeenCalledWith(55, "SUBMITTED");
+
         createObjectURLSpy.mockRestore();
         appendSpy.mockRestore();
         removeSpy.mockRestore();
@@ -198,5 +221,47 @@ describe("PracticeDetail", () => {
         await screen.findByTestId("practice-detail-view");
 
         expect(latestProps().error).toContain("Nepodařilo se načíst detail praxe");
+    });
+
+    it("exports completed practice report as html file", async () => {
+        vi.mocked(getPractice).mockResolvedValue({
+            id: 55,
+            name: "Praxe",
+            state: "COMPLETED",
+            closed: true,
+            canEditFounderFields: false,
+            canEditStudentFields: false,
+            canEditFinalEvaluation: false,
+            canChangeState: false,
+            canUploadAttachments: false,
+        });
+        vi.mocked(getAttachmentsForPractice).mockResolvedValue([]);
+        vi.mocked(exportPractice).mockResolvedValue({ data: new Blob(["<html></html>"]) } as any);
+
+        const createObjectURLSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:export");
+        const revokeObjectURLSpy = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => undefined);
+        const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+
+        render(
+            <MemoryRouter>
+                <PracticeDetail editMode={false} setEditMode={mockSetEditMode} />
+            </MemoryRouter>
+        );
+
+        await screen.findByTestId("practice-detail-view");
+
+        await act(async () => {
+            latestProps().onExport();
+            await Promise.resolve();
+        });
+
+        expect(exportPractice).toHaveBeenCalledWith(55);
+        expect(createObjectURLSpy).toHaveBeenCalled();
+        expect(clickSpy).toHaveBeenCalled();
+        expect(revokeObjectURLSpy).toHaveBeenCalledWith("blob:export");
+
+        createObjectURLSpy.mockRestore();
+        revokeObjectURLSpy.mockRestore();
+        clickSpy.mockRestore();
     });
 });
