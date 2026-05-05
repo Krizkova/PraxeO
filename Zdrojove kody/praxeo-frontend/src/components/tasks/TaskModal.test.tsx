@@ -109,7 +109,6 @@ describe("TaskModal", () => {
 
     it("downloads and declines deleting existing attachment in edit mode", async () => {
         const createObjectURL = vi.fn(() => "blob:modal-file");
-        const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
         vi.stubGlobal("URL", { ...window.URL, createObjectURL });
         vi.mocked(downloadAttachment).mockResolvedValue({ data: new Blob(["x"]) } as any);
 
@@ -126,15 +125,13 @@ describe("TaskModal", () => {
 
         fireEvent.click(screen.getByTitle("Stáhnout"));
         fireEvent.click(screen.getByTitle("Smazat"));
+        fireEvent.click(screen.getAllByRole("button", { name: /zrušit/i })[0]);
 
         await waitFor(() => {
             expect(downloadAttachment).toHaveBeenCalledWith(7);
         });
         expect(createObjectURL).toHaveBeenCalled();
-        expect(confirmSpy).toHaveBeenCalled();
         expect(deleteAttachment).not.toHaveBeenCalled();
-
-        confirmSpy.mockRestore();
     });
 
     it("submits final evaluation in edit mode", () => {
